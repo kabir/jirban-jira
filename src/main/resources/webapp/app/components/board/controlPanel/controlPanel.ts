@@ -10,6 +10,7 @@ import "rxjs/add/operator/debounceTime";
 import {CustomFieldValues} from "../../../data/board/customField";
 import {VIEW_KANBAN} from "../../../common/constants";
 import {FormGroup, FormControl, AbstractControl} from "@angular/forms";
+import {ProgressErrorService} from "../../../services/progressErrorService";
 
 @Component({
     selector: 'control-panel',
@@ -37,7 +38,7 @@ export class ControlPanelComponent {
 
     private view:string;
 
-    constructor(private boardData:BoardData) {
+    constructor(private boardData:BoardData, private progressService:ProgressErrorService) {
     }
 
     private get controlForm():FormGroup {
@@ -113,31 +114,37 @@ export class ControlPanelComponent {
                 let lastValues:any = dirtyChecker.lastValues;
 
                 let dirty:IMap<boolean> = dirtyChecker.checkDirty(value);
-                //Swimlane is necessary to update if dirty
-                if (dirty["swimlane"]) {
-                    this.updateSwimlane(value);
-                }
-                //Detail is cheap to update if dirty
-                if (dirty["detail"]) {
-                    this.updateIssueDetail(detailForm, lastValues["detail"], value["detail"]);
-                }
-                //Updating the filters is costly so do it all in one go
-                let dirtyCustom:boolean = false;
-                for (let customFieldValues of this.customFields) {
-                    if (dirty[customFieldValues.name]) {
-                        dirtyCustom = true;
-                        break;
+                this.progressService.startProgress(true);
+                try {
+                    //Swimlane is necessary to update if dirty
+                    if (dirty["swimlane"]) {
+                        this.updateSwimlane(value);
                     }
-                }
-                if (dirtyCustom || dirty["project"] || dirty["priority"] || dirty["issue-type"] || dirty["assignee"] || dirty["component"]) {
-                    let customFieldFormValues:IMap<any> = {};
+                    //Detail is cheap to update if dirty
+                    if (dirty["detail"]) {
+                        this.updateIssueDetail(detailForm, lastValues["detail"], value["detail"]);
+                    }
+                    //Updating the filters is costly so do it all in one go
+                    let dirtyCustom:boolean = false;
                     for (let customFieldValues of this.customFields) {
-                        customFieldFormValues[customFieldValues.name] = value[customFieldValues.name];
+                        if (dirty[customFieldValues.name]) {
+                            dirtyCustom = true;
+                            break;
+                        }
                     }
-                    this.updateFilters(dirty,
-                        value["project"], value["priority"], value["issue-type"], value["assignee"], value["component"], customFieldFormValues);
+                    if (dirtyCustom || dirty["project"] || dirty["priority"] || dirty["issue-type"] || dirty["assignee"] || dirty["component"]) {
+                        let customFieldFormValues:IMap<any> = {};
+                        for (let customFieldValues of this.customFields) {
+                            customFieldFormValues[customFieldValues.name] = value[customFieldValues.name];
+                        }
+                        this.updateFilters(dirty,
+                            value["project"], value["priority"], value["issue-type"], value["assignee"], value["component"], customFieldFormValues);
+
+                    }
+                } finally {
+                    this.progressService.finishProgress();
                 }
-                this.updateLinkUrl();
+
             });
 
         this._assigneeFilterForm = assigneeFilterForm;
