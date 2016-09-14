@@ -203,7 +203,7 @@ public class BoardManagerTest extends AbstractBoardTest {
 
         //Delete an issue in main project and check board
         JirbanIssueEvent delete = JirbanIssueEvent.createDeleteEvent("TDP-3", "TDP");
-        boardManager.handleEvent(delete, nextRankedIssueUtil);
+        boardManager.handleEvent(delete);
         ModelNode boardNode = getJsonCheckingViewIdAndUsers(1, "brian", "jason", "kabir");
         checkNoBlacklist(boardNode);
         checkComponents(boardNode);
@@ -226,7 +226,7 @@ public class BoardManagerTest extends AbstractBoardTest {
 
         //Delete an issue in main project and check board
         delete = JirbanIssueEvent.createDeleteEvent("TDP-7", "TDP");
-        boardManager.handleEvent(delete, nextRankedIssueUtil);
+        boardManager.handleEvent(delete);
         boardNode = getJsonCheckingViewIdAndUsers(2, "brian", "jason", "kabir");
         checkNoBlacklist(boardNode);
         checkNoCustomFields(boardNode);
@@ -247,7 +247,7 @@ public class BoardManagerTest extends AbstractBoardTest {
 
         //Delete an issue in other project and check board
         delete = JirbanIssueEvent.createDeleteEvent("TBG-1", "TBG");
-        boardManager.handleEvent(delete, nextRankedIssueUtil);
+        boardManager.handleEvent(delete);
         boardNode = getJsonCheckingViewIdAndUsers(3, "brian", "jason", "kabir");
         checkNoBlacklist(boardNode);
         checkNoCustomFields(boardNode);
@@ -268,7 +268,7 @@ public class BoardManagerTest extends AbstractBoardTest {
 
         //Delete an issue in other project and check board
         delete = JirbanIssueEvent.createDeleteEvent("TBG-3", "TBG");
-        boardManager.handleEvent(delete, nextRankedIssueUtil);
+        boardManager.handleEvent(delete);
         boardNode = getJsonCheckingViewIdAndUsers(4, "brian", "jason", "kabir");
         checkNoBlacklist(boardNode);
         checkNoCustomFields(boardNode);
@@ -300,7 +300,7 @@ public class BoardManagerTest extends AbstractBoardTest {
 
         JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-5", IssueType.FEATURE, Priority.HIGH,
                 "Five", "kabir", new String[]{"C1"}, "TDP-B");
-        boardManager.handleEvent(create, nextRankedIssueUtil);
+        boardManager.handleEvent(create);
         boardNode = getJsonCheckingViewIdAndUsers(1, "brian", "kabir");
         checkComponents(boardNode, "C1");
         checkNoBlacklist(boardNode);
@@ -324,7 +324,7 @@ public class BoardManagerTest extends AbstractBoardTest {
 
         create = createCreateEventAndAddToRegistry("TBG-4", IssueType.FEATURE, Priority.HIGH,
                 "Four", null, new String[]{"C1"}, "TBG-X");
-        boardManager.handleEvent(create, nextRankedIssueUtil);
+        boardManager.handleEvent(create);
         boardNode = getJsonCheckingViewIdAndUsers(2, "brian", "kabir");
         checkComponents(boardNode, "C1");
         checkNoBlacklist(boardNode);
@@ -361,7 +361,7 @@ public class BoardManagerTest extends AbstractBoardTest {
 
         JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-5", IssueType.FEATURE, Priority.HIGH,
                 "Five", "james", null, "TDP-B");
-        boardManager.handleEvent(create, nextRankedIssueUtil);
+        boardManager.handleEvent(create);
         ModelNode boardNode = getJsonCheckingViewIdAndUsers(1, "brian", "james", "kabir");
         checkNoBlacklist(boardNode);
         checkNoCustomFields(boardNode);
@@ -381,7 +381,7 @@ public class BoardManagerTest extends AbstractBoardTest {
 
         create = createCreateEventAndAddToRegistry("TBG-4", IssueType.FEATURE, Priority.HIGH,
                 "Four", "stuart", null, "TBG-X");
-        boardManager.handleEvent(create, nextRankedIssueUtil);
+        boardManager.handleEvent(create);
         boardNode = getJsonCheckingViewIdAndUsers(2, "brian", "james", "kabir", "stuart");
         checkNoBlacklist(boardNode);
         checkNoCustomFields(boardNode);
@@ -418,7 +418,7 @@ public class BoardManagerTest extends AbstractBoardTest {
 
         JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-5", IssueType.FEATURE, Priority.HIGH,
                 "Five", "brian", new String[]{"F"}, "TDP-B");
-        boardManager.handleEvent(create, nextRankedIssueUtil);
+        boardManager.handleEvent(create);
         boardNode = getJsonCheckingViewIdAndUsers(1, "brian", "kabir");
         checkComponents(boardNode, "C", "E", "F", "G", "I", "N");
         checkNoBlacklist(boardNode);
@@ -440,7 +440,7 @@ public class BoardManagerTest extends AbstractBoardTest {
 
         create = createCreateEventAndAddToRegistry("TBG-4", IssueType.FEATURE, Priority.HIGH,
                 "Four", "brian", new String[]{"J", "K"}, "TBG-X");
-        boardManager.handleEvent(create, nextRankedIssueUtil);
+        boardManager.handleEvent(create);
         boardNode = getJsonCheckingViewIdAndUsers(2, "brian", "kabir");
         checkComponents(boardNode, "C", "E", "F", "G", "I", "J", "K", "N");
         checkNoBlacklist(boardNode);
@@ -476,7 +476,7 @@ public class BoardManagerTest extends AbstractBoardTest {
 
         JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-4", IssueType.FEATURE, Priority.HIGH,
                 "Four-1", "kabir", false, new String[]{"C1"}, false, "TDP-B", true);
-        boardManager.handleEvent(update, nextRankedIssueUtil);
+        boardManager.handleEvent(update);
         boardNode = getJsonCheckingViewIdAndUsers(1, "brian", "kabir");
         checkNoBlacklist(boardNode);
         checkNoCustomFields(boardNode);
@@ -498,7 +498,7 @@ public class BoardManagerTest extends AbstractBoardTest {
 
         //type
         update = createUpdateEventAndAddToRegistry("TDP-1", IssueType.FEATURE, null, null, null, false, null, false, null, false);
-        boardManager.handleEvent(update, nextRankedIssueUtil);
+        boardManager.handleEvent(update);
         boardNode = getJsonCheckingViewIdAndUsers(2, "brian", "kabir");
         checkNoBlacklist(boardNode);
         checkNoCustomFields(boardNode);
@@ -507,7 +507,7 @@ public class BoardManagerTest extends AbstractBoardTest {
 
         //priority
         update = createUpdateEventAndAddToRegistry("TDP-1", null, Priority.LOW, null, null, false, null, false, null, false);
-        boardManager.handleEvent(update, nextRankedIssueUtil);
+        boardManager.handleEvent(update);
         boardNode = getJsonCheckingViewIdAndUsers(3, "brian", "kabir");
         checkNoBlacklist(boardNode);
         checkNoCustomFields(boardNode);
@@ -516,7 +516,7 @@ public class BoardManagerTest extends AbstractBoardTest {
 
         //summary
         update = createUpdateEventAndAddToRegistry("TDP-1", (IssueType) null, null, "One-1", null, false, null, false, null, false);
-        boardManager.handleEvent(update, nextRankedIssueUtil);
+        boardManager.handleEvent(update);
         boardNode = getJsonCheckingViewIdAndUsers(4, "brian", "kabir");
         checkNoBlacklist(boardNode);
         checkNoCustomFields(boardNode);
@@ -525,7 +525,7 @@ public class BoardManagerTest extends AbstractBoardTest {
 
         //assign
         update = createUpdateEventAndAddToRegistry("TDP-1", (IssueType) null, null, null, "brian", false, null, false, null, false);
-        boardManager.handleEvent(update, nextRankedIssueUtil);
+        boardManager.handleEvent(update);
         boardNode = getJsonCheckingViewIdAndUsers(5, "brian", "kabir");
         checkNoBlacklist(boardNode);
         checkNoCustomFields(boardNode);
@@ -534,7 +534,7 @@ public class BoardManagerTest extends AbstractBoardTest {
 
         //No updated assignee, nor unassigned - and nothing else changed so the event is a noop and the view does not change
         update = createUpdateEventAndAddToRegistry("TDP-1", (IssueType) null, null, null, null, false, null, false, null, false);
-        boardManager.handleEvent(update, nextRankedIssueUtil);
+        boardManager.handleEvent(update);
         boardNode = getJsonCheckingViewIdAndUsers(5, "brian", "kabir");
         checkNoBlacklist(boardNode);
         checkNoCustomFields(boardNode);
@@ -543,7 +543,7 @@ public class BoardManagerTest extends AbstractBoardTest {
 
         //Unassign
         update = createUpdateEventAndAddToRegistry("TDP-1", (IssueType) null, null, null, null, true, null, false, null, false);
-        boardManager.handleEvent(update, nextRankedIssueUtil);
+        boardManager.handleEvent(update);
         boardNode = getJsonCheckingViewIdAndUsers(6, "brian", "kabir");
         checkNoBlacklist(boardNode);
         checkNoCustomFields(boardNode);
@@ -552,7 +552,7 @@ public class BoardManagerTest extends AbstractBoardTest {
 
         //Change state
         update = createUpdateEventAndAddToRegistry("TDP-1", (IssueType) null, null, null, null, false, null, false, "TDP-D", true);
-        boardManager.handleEvent(update, nextRankedIssueUtil);
+        boardManager.handleEvent(update);
         boardNode = getJsonCheckingViewIdAndUsers(7, "brian", "kabir");
         checkNoBlacklist(boardNode);
         checkNoCustomFields(boardNode);
@@ -561,7 +561,7 @@ public class BoardManagerTest extends AbstractBoardTest {
 
         //Change component
         update = createUpdateEventAndAddToRegistry("TDP-1", (IssueType) null, null, null, null, false, new String[]{"C2"}, false, "TDP-D", true);
-        boardManager.handleEvent(update, nextRankedIssueUtil);
+        boardManager.handleEvent(update);
         boardNode = getJsonCheckingViewIdAndUsers(8, "brian", "kabir");
         checkNoBlacklist(boardNode);
         checkNoCustomFields(boardNode);
@@ -570,7 +570,7 @@ public class BoardManagerTest extends AbstractBoardTest {
 
         //Change in the other project
         update = createUpdateEventAndAddToRegistry("TBG-3", IssueType.BUG, Priority.HIGHEST, "Three-1", "kabir", false, new String[]{"C2"}, false, "TBG-Y", true);
-        boardManager.handleEvent(update, nextRankedIssueUtil);
+        boardManager.handleEvent(update);
         boardNode = getJsonCheckingViewIdAndUsers(9, "brian", "kabir");
         checkNoBlacklist(boardNode);
         checkNoCustomFields(boardNode);
@@ -602,11 +602,11 @@ public class BoardManagerTest extends AbstractBoardTest {
         getJsonCheckingViewIdAndUsers(0, "brian", "kabir");
 
         JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-1", (IssueType) null, null, null, "jason", false, null, false, null, false);
-        boardManager.handleEvent(update, nextRankedIssueUtil);
+        boardManager.handleEvent(update);
         getJsonCheckingViewIdAndUsers(1, "brian", "jason", "kabir");
 
         update = createUpdateEventAndAddToRegistry("TBG-3", (IssueType) null, null, null, "james", false, null, false, null, false);
-        boardManager.handleEvent(update, nextRankedIssueUtil);
+        boardManager.handleEvent(update);
         ModelNode boardNode = getJsonCheckingViewIdAndUsers(2, "brian", "james", "jason", "kabir");
         checkNoBlacklist(boardNode);
         checkNoCustomFields(boardNode);
@@ -638,14 +638,14 @@ public class BoardManagerTest extends AbstractBoardTest {
 
         JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-1", (IssueType) null, null, null, null,
                 false, new String[]{"E", "F"}, false, null, false);
-        boardManager.handleEvent(update, nextRankedIssueUtil);
+        boardManager.handleEvent(update);
         ModelNode boardNode = getJsonCheckingViewIdAndUsers(1, "brian", "kabir");
         checkComponents(boardNode, "D", "E", "F", "K");
         checkNoCustomFields(boardNode);
 
         update = createUpdateEventAndAddToRegistry("TBG-3", (IssueType) null, null, null, null,
                 false, new String[]{"L"}, false, null, false);
-        boardManager.handleEvent(update, nextRankedIssueUtil);
+        boardManager.handleEvent(update);
         boardNode = getJsonCheckingViewIdAndUsers(2, "brian", "kabir");
         checkComponents(boardNode, "D", "E", "F", "K", "L");
         checkNoBlacklist(boardNode);
@@ -662,7 +662,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         //Clear the components from an issue
         update = createUpdateEventAndAddToRegistry("TDP-1", (IssueType) null, null, null, null,
                 false, null, true, null, false);
-        boardManager.handleEvent(update, nextRankedIssueUtil);
+        boardManager.handleEvent(update);
         boardNode = getJsonCheckingViewIdAndUsers(3, "brian", "kabir");
         checkComponents(boardNode, "D", "E", "F", "K", "L");
         checkNoBlacklist(boardNode);
@@ -700,7 +700,7 @@ public class BoardManagerTest extends AbstractBoardTest {
 
         //Add another issue to the same bad state to check that this works on updating
         JirbanIssueEvent event = createCreateEventAndAddToRegistry("TDP-3", IssueType.TASK, Priority.HIGHEST, "Three", null, null, "BAD");
-        boardManager.handleEvent(event, nextRankedIssueUtil);
+        boardManager.handleEvent(event);
         boardNode = getJsonCheckingViewIdAndUsers(1, "kabir");
         allIssues = getIssuesCheckingSize(boardNode, 2);
         checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0);
@@ -712,7 +712,7 @@ public class BoardManagerTest extends AbstractBoardTest {
 
         //Add another issue to another bad state
         event = createCreateEventAndAddToRegistry("TDP-4", IssueType.BUG, Priority.HIGH, "Four", null, null, "BADDER");
-        boardManager.handleEvent(event, nextRankedIssueUtil);
+        boardManager.handleEvent(event);
         boardNode = getJsonCheckingViewIdAndUsers(2, "kabir");
         allIssues = getIssuesCheckingSize(boardNode, 2);
         checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0);
@@ -724,7 +724,7 @@ public class BoardManagerTest extends AbstractBoardTest {
 
         //Move an issue from a bad state to a good state, this does not affect the blacklist which is ok since the config is broken anyway
         event = createUpdateEventAndAddToRegistry("TDP-4", (IssueType) null, null, null, null, false, null, false, "TDP-A", false);
-        boardManager.handleEvent(event, nextRankedIssueUtil);
+        boardManager.handleEvent(event);
         //Since the issue has been blacklisted the view id is the same
         getJsonCheckingViewIdAndUsers(2, "kabir");
         checkProjectRankedIssues(boardNode, "TDP", 2);
@@ -733,7 +733,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         //Now delete a bad issue, this should work and remove it from the blacklist. We don't attempt to update the
         //bad configuration notices though so the bad state remains in the list
         event = JirbanIssueEvent.createDeleteEvent("TDP-4", "TDP");
-        boardManager.handleEvent(event, nextRankedIssueUtil);
+        boardManager.handleEvent(event);
         boardNode = getJsonCheckingViewIdAndUsers(3, "kabir");
         checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0);
         checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.LOW, "Two", null, 1, 0);
@@ -761,7 +761,7 @@ public class BoardManagerTest extends AbstractBoardTest {
 
         //Add another issue to the same bad issue type to check that this works on updating
         JirbanIssueEvent event = createCreateEventAndAddToRegistry("TDP-3", "BAD", Priority.HIGHEST.name, "Three", null, null, "TDP-C");
-        boardManager.handleEvent(event, nextRankedIssueUtil);
+        boardManager.handleEvent(event);
         boardNode = getJsonCheckingViewIdAndUsers(1, "kabir");
         allIssues = getIssuesCheckingSize(boardNode, 2);
         checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0);
@@ -773,7 +773,7 @@ public class BoardManagerTest extends AbstractBoardTest {
 
         //Add another issue to another bad issue type
         event = createCreateEventAndAddToRegistry("TDP-4", "BADDER", Priority.HIGH.name, "Four", null, null, "TDP-C");
-        boardManager.handleEvent(event, nextRankedIssueUtil);
+        boardManager.handleEvent(event);
         boardNode = getJsonCheckingViewIdAndUsers(2, "kabir");
         allIssues = getIssuesCheckingSize(boardNode, 2);
         checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0);
@@ -785,14 +785,14 @@ public class BoardManagerTest extends AbstractBoardTest {
 
         //Move an issue from a bad issue type to a good issue type, this does not affect the blacklist which is ok since the config is broken anyway
         event = createUpdateEventAndAddToRegistry("TDP-4", IssueType.TASK, null, null, null, false, null, false, null, false);
-        boardManager.handleEvent(event, nextRankedIssueUtil);
+        boardManager.handleEvent(event);
         //Since the issue has been blacklisted the view id is the same
         getJsonCheckingViewIdAndUsers(2, "kabir");
 
         //Now delete a bad issue, this should work and remove it from the blacklist. We don't attempt to update the
         //bad configuration notices though so the bad issue type remains in the list
         event = JirbanIssueEvent.createDeleteEvent("TDP-4", "TDP");
-        boardManager.handleEvent(event, nextRankedIssueUtil);
+        boardManager.handleEvent(event);
         boardNode = getJsonCheckingViewIdAndUsers(3, "kabir");
         checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0);
         checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.LOW, "Two", null, 1, 0);
@@ -819,7 +819,7 @@ public class BoardManagerTest extends AbstractBoardTest {
 
         //Add another issue to the same bad priority to check that this works on updating
         JirbanIssueEvent event = createCreateEventAndAddToRegistry("TDP-3", IssueType.FEATURE.name, "BAD", "Three", null, null, "TDP-C");
-        boardManager.handleEvent(event, nextRankedIssueUtil);
+        boardManager.handleEvent(event);
         boardNode = getJsonCheckingViewIdAndUsers(1, "kabir");
         allIssues = getIssuesCheckingSize(boardNode, 2);
         checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0);
@@ -831,7 +831,7 @@ public class BoardManagerTest extends AbstractBoardTest {
 
         //Add another issue to another bad priority
         event = createCreateEventAndAddToRegistry("TDP-4", IssueType.TASK.name, "BADDER", "Four", null, null, "TDP-C");
-        boardManager.handleEvent(event, nextRankedIssueUtil);
+        boardManager.handleEvent(event);
         boardNode = getJsonCheckingViewIdAndUsers(2, "kabir");
         allIssues = getIssuesCheckingSize(boardNode, 2);
         checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0);
@@ -844,14 +844,14 @@ public class BoardManagerTest extends AbstractBoardTest {
 
         //Move an issue from a bad priority to a good priority, this does not affect the blacklist which is ok since the config is broken anyway
         event = createUpdateEventAndAddToRegistry("TDP-4", null, Priority.HIGH, null, null, false, null, false, null, false);
-        boardManager.handleEvent(event, nextRankedIssueUtil);
+        boardManager.handleEvent(event);
         //Since the issue has been blacklisted the view id is the same
         getJsonCheckingViewIdAndUsers(2, "kabir");
 
         //Now delete a bad issue, this should work and remove it from the blacklist. We don't attempt to update the
         //bad configuration notices though so the bad priority remains in the list
         event = JirbanIssueEvent.createDeleteEvent("TDP-4", "TDP");
-        boardManager.handleEvent(event, nextRankedIssueUtil);
+        boardManager.handleEvent(event);
         boardNode = getJsonCheckingViewIdAndUsers(3, "kabir");
         checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0);
         checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.LOW, "Two", null, 1, 0);
@@ -946,7 +946,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         //This one does not bring in any new assignees/components
         JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-3", (IssueType)null, null,
                 null, null, false, null, false, "TDP-A", false);
-        boardManager.handleEvent(update, nextRankedIssueUtil);
+        boardManager.handleEvent(update);
         //view id is 0 here because board has been recreated (due to moving issue out of 'done')
         boardNode = getJsonCheckingViewIdAndUsers(0, "kabir");
         allIssues = getIssuesCheckingSize(boardNode, 4);
@@ -962,7 +962,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         //Bring in new assignees/components
         update = createUpdateEventAndAddToRegistry("TDP-4", (IssueType)null, null,
                 null, null, false, null, false, "TDP-A", false);
-        boardManager.handleEvent(update, nextRankedIssueUtil);
+        boardManager.handleEvent(update);
         //view id is 0 here because board has been recreated (due to moving issue out of 'done')
         boardNode = getJsonCheckingViewIdAndUsers(0, "brian", "kabir");
         allIssues = getIssuesCheckingSize(boardNode, 5);
@@ -979,7 +979,7 @@ public class BoardManagerTest extends AbstractBoardTest {
 
         update = createUpdateEventAndAddToRegistry("TBG-2", (IssueType)null, null,
                 null, null, false, null, false, "TBG-X", false);
-        boardManager.handleEvent(update, nextRankedIssueUtil);
+        boardManager.handleEvent(update);
         //view id is 0 here because board has been recreated (due to moving issue out of 'done')
         boardNode = getJsonCheckingViewIdAndUsers(0, "brian", "jason", "kabir");
         allIssues = getIssuesCheckingSize(boardNode, 6);
@@ -997,7 +997,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         //Check moving an issue to a done state
         update = createUpdateEventAndAddToRegistry("TDP-4", (IssueType)null, null,
                 null, null, false, null, false, "TDP-C", false);
-        boardManager.handleEvent(update, nextRankedIssueUtil);
+        boardManager.handleEvent(update);
         boardNode = getJsonCheckingViewIdAndUsers(1, "brian", "jason", "kabir");
         allIssues = getIssuesCheckingSize(boardNode, 5);
         checkComponents(boardNode, "C1", "C2");
@@ -1012,7 +1012,7 @@ public class BoardManagerTest extends AbstractBoardTest {
 
         update = createUpdateEventAndAddToRegistry("TBG-1", (IssueType)null, null,
                 null, null, false, null, false, "TBG-Y", false);
-        boardManager.handleEvent(update, nextRankedIssueUtil);
+        boardManager.handleEvent(update);
         boardNode = getJsonCheckingViewIdAndUsers(2, "brian", "jason", "kabir");
         allIssues = getIssuesCheckingSize(boardNode, 4);
         checkComponents(boardNode, "C1", "C2");
@@ -1027,7 +1027,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         //Check that moving an issue from a done state to another done state does not trigger a change
         update = createUpdateEventAndAddToRegistry("TDP-4", (IssueType)null, null,
                 null, null, false, null, false, "TDP-D", false);
-        boardManager.handleEvent(update, nextRankedIssueUtil);
+        boardManager.handleEvent(update);
         boardNode = getJsonCheckingViewIdAndUsers(2, "brian", "jason", "kabir");
         allIssues = getIssuesCheckingSize(boardNode, 4);
         checkComponents(boardNode, "C1", "C2");
@@ -1042,7 +1042,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         //Test that updating an issue in a 'done' does not trigger a change
         update = createUpdateEventAndAddToRegistry("TDP-4", IssueType.BUG, Priority.LOW,
                 "Will be ignored", "nonexistent", false, null, false, null, false);
-        boardManager.handleEvent(update, nextRankedIssueUtil);
+        boardManager.handleEvent(update);
         boardNode = getJsonCheckingViewIdAndUsers(2, "brian", "jason", "kabir");
         allIssues = getIssuesCheckingSize(boardNode, 4);
         checkComponents(boardNode, "C1", "C2");
@@ -1143,7 +1143,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         customFieldValues.put(documenterId, "jason");
         JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-4", IssueType.FEATURE, Priority.HIGH,
                 "Four", "kabir", null, "TDP-D", customFieldValues);
-        boardManager.handleEvent(create, nextRankedIssueUtil);
+        boardManager.handleEvent(create);
         boardNode = getJsonCheckingViewIdAndUsers(1, "kabir");
         checkTesters(boardNode, "brian", "jason", "kabir");
         checkDocumenters(boardNode, "brian", "jason"/*, "kabir"*/);
@@ -1154,7 +1154,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         customFieldValues.put(testerId, "brian");
         create = createCreateEventAndAddToRegistry("TDP-5", IssueType.FEATURE, Priority.HIGH,
                 "Five", "kabir", null, "TDP-D", customFieldValues);
-        boardManager.handleEvent(create, nextRankedIssueUtil);
+        boardManager.handleEvent(create);
         boardNode = getJsonCheckingViewIdAndUsers(2, "kabir");
         checkTesters(boardNode, "brian", "jason", "kabir");
         checkDocumenters(boardNode, "brian", "jason"/*, "kabir"*/);
@@ -1164,7 +1164,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         customFieldValues.put(testerId, "jason");
         create = createCreateEventAndAddToRegistry("TDP-6", IssueType.FEATURE, Priority.HIGH,
                 "Six", "kabir", null, "TDP-D", customFieldValues);
-        boardManager.handleEvent(create, nextRankedIssueUtil);
+        boardManager.handleEvent(create);
         boardNode = getJsonCheckingViewIdAndUsers(3, "kabir");
         checkTesters(boardNode, "brian", "jason", "kabir");
         checkDocumenters(boardNode, "brian", "jason"/*, "kabir"*/);
@@ -1175,7 +1175,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         customFieldValues.put(documenterId, "kabir");
         create = createCreateEventAndAddToRegistry("TBG-2", IssueType.FEATURE, Priority.HIGH,
                 "Two", "kabir", null, "TBG-Y", customFieldValues);
-        boardManager.handleEvent(create, nextRankedIssueUtil);
+        boardManager.handleEvent(create);
         boardNode = getJsonCheckingViewIdAndUsers(4, "kabir");
         checkTesters(boardNode, "brian", "jason", "kabir");
         checkDocumenters(boardNode, "brian", "jason"/*, "kabir"*/);
@@ -1185,7 +1185,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         customFieldValues.put(testerId, "kabir");
         create = createCreateEventAndAddToRegistry("TBG-3", IssueType.FEATURE, Priority.HIGH,
                 "Three", "kabir", null, "TBG-Y", customFieldValues);
-        boardManager.handleEvent(create, nextRankedIssueUtil);
+        boardManager.handleEvent(create);
         boardNode = getJsonCheckingViewIdAndUsers(5, "kabir");
         checkTesters(boardNode, "brian", "jason", "kabir");
         checkDocumenters(boardNode, "brian", "jason"/*, "kabir"*/);
@@ -1228,7 +1228,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         customFieldValues.put(testerId, "brian");
         JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-4", IssueType.FEATURE, Priority.HIGH,
                 "Four", "kabir", null, "TDP-D", customFieldValues);
-        boardManager.handleEvent(create, nextRankedIssueUtil);
+        boardManager.handleEvent(create);
         boardNode = getJsonCheckingViewIdAndUsers(1, "kabir");
         checkComponents(boardNode);
         checkNoBlacklist(boardNode);
@@ -1251,7 +1251,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         customFieldValues.put(documenterId, "kabir");
         create = createCreateEventAndAddToRegistry("TDP-5", IssueType.FEATURE, Priority.HIGH,
                 "Five", "kabir", null, "TDP-A", customFieldValues);
-        boardManager.handleEvent(create, nextRankedIssueUtil);
+        boardManager.handleEvent(create);
         boardNode = getJsonCheckingViewIdAndUsers(2, "kabir");
         checkComponents(boardNode);
         checkNoBlacklist(boardNode);
@@ -1273,7 +1273,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         customFieldValues.put(documenterId, "james");
         create = createCreateEventAndAddToRegistry("TBG-2", IssueType.FEATURE, Priority.HIGH,
                 "Two", "kabir", null, "TBG-Y", customFieldValues);
-        boardManager.handleEvent(create, nextRankedIssueUtil);
+        boardManager.handleEvent(create);
         boardNode = getJsonCheckingViewIdAndUsers(3, "kabir");
         checkComponents(boardNode);
         checkNoBlacklist(boardNode);
@@ -1317,7 +1317,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         customFieldValues.put(testerId, "kabir");
         JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-1", (IssueType)null, null,
                 null, null, false, null, false, null, false, customFieldValues);
-        boardManager.handleEvent(update, nextRankedIssueUtil);
+        boardManager.handleEvent(update);
         boardNode = getJsonCheckingViewIdAndUsers(1, "kabir");
         checkNoBlacklist(boardNode);
         checkDocumenters(boardNode, "jason", "kabir");
@@ -1333,7 +1333,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         customFieldValues.put(documenterId, UNSET_VALUE);
         update = createUpdateEventAndAddToRegistry("TDP-1", (IssueType)null, null,
                 null, null, false, null, false, null, false, customFieldValues);
-        boardManager.handleEvent(update, nextRankedIssueUtil);
+        boardManager.handleEvent(update);
         boardNode = getJsonCheckingViewIdAndUsers(2, "kabir");
         checkNoBlacklist(boardNode);
         checkDocumenters(boardNode, "jason", "kabir");
@@ -1351,7 +1351,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         customFieldValues.put(testerId, UNSET_VALUE);
         update = createUpdateEventAndAddToRegistry("TDP-2", (IssueType)null, null,
                 null, null, false, null, false, null, false, customFieldValues);
-        boardManager.handleEvent(update, nextRankedIssueUtil);
+        boardManager.handleEvent(update);
         boardNode = getJsonCheckingViewIdAndUsers(3, "kabir");
         checkNoBlacklist(boardNode);
         checkDocumenters(boardNode, "jason", "kabir");
@@ -1366,7 +1366,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         customFieldValues.put(testerId, "jason");
         update = createUpdateEventAndAddToRegistry("TDP-2", (IssueType)null, null,
                 null, null, false, null, false, null, false, customFieldValues);
-        boardManager.handleEvent(update, nextRankedIssueUtil);
+        boardManager.handleEvent(update);
         boardNode = getJsonCheckingViewIdAndUsers(4, "kabir");
         checkNoBlacklist(boardNode);
         checkDocumenters(boardNode, "jason", "kabir");
@@ -1403,7 +1403,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         customFieldValues.put(testerId, "brian");
         JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-1", (IssueType)null, null,
                 null, null, false, null, false, null, false, customFieldValues);
-        boardManager.handleEvent(update, nextRankedIssueUtil);
+        boardManager.handleEvent(update);
         boardNode = getJsonCheckingViewIdAndUsers(1, "kabir");
         checkNoBlacklist(boardNode);
         checkDocumenters(boardNode, "jason", "kabir");
@@ -1419,7 +1419,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         customFieldValues.put(documenterId, "brian");
         update = createUpdateEventAndAddToRegistry("TDP-1", (IssueType)null, null,
                 null, null, false, null, false, null, false, customFieldValues);
-        boardManager.handleEvent(update, nextRankedIssueUtil);
+        boardManager.handleEvent(update);
         boardNode = getJsonCheckingViewIdAndUsers(2, "kabir");
         checkNoBlacklist(boardNode);
         checkDocumenters(boardNode, "brian", "jason", "kabir");
@@ -1449,7 +1449,7 @@ public class BoardManagerTest extends AbstractBoardTest {
 
         //Create an update event which doesn't change anything we are interested in and make sure the view id stays at zero
         JirbanIssueEvent event = JirbanIssueEvent.createUpdateEvent("TDP-1", "TDP", null, null, null, null, null, null, null, false, null);
-        boardManager.handleEvent(event, nextRankedIssueUtil);
+        boardManager.handleEvent(event);
         ModelNode boardNode = getJsonCheckingViewIdAndUsers(0, "brian", "jason", "kabir");
         checkNoBlacklist(boardNode);
         checkComponents(boardNode);
@@ -1491,7 +1491,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         //Rank an issue to somewhere in the middle in main project and check board
         issueRegistry.rerankIssue("TDP-1", "TDP-4");
         JirbanIssueEvent event = JirbanIssueEvent.createUpdateEvent("TDP-1", "TDP", null, null, null, null, null, null, null, true, null);
-        boardManager.handleEvent(event, nextRankedIssueUtil);
+        boardManager.handleEvent(event);
         ModelNode boardNode = getJsonCheckingViewIdAndUsers(1, "brian", "jason", "kabir");
         checkNoBlacklist(boardNode);
         checkComponents(boardNode);
@@ -1502,7 +1502,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         //Rank an issue to the start of the main project and check board
         issueRegistry.rerankIssue("TDP-1", "TDP-2");
         event = JirbanIssueEvent.createUpdateEvent("TDP-1", "TDP", null, null, null, null, null, null, null, true, null);
-        boardManager.handleEvent(event, nextRankedIssueUtil);
+        boardManager.handleEvent(event);
         boardNode = getJsonCheckingViewIdAndUsers(2, "brian", "jason", "kabir");
         checkNoBlacklist(boardNode);
         checkComponents(boardNode);
@@ -1513,7 +1513,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         //Rank an issue to the end of the main project and check board
         issueRegistry.rerankIssue("TDP-1", null);
         event = JirbanIssueEvent.createUpdateEvent("TDP-1", "TDP", null, null, null, null, null, null, null, true, null);
-        boardManager.handleEvent(event, nextRankedIssueUtil);
+        boardManager.handleEvent(event);
         boardNode = getJsonCheckingViewIdAndUsers(3, "brian", "jason", "kabir");
         checkNoBlacklist(boardNode);
         checkComponents(boardNode);
@@ -1524,7 +1524,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         //Rank an issue in the other project and check board
         issueRegistry.rerankIssue("TBG-2", "TBG-4");
         event = JirbanIssueEvent.createUpdateEvent("TBG-2", "TBG", null, null, null, null, null, null, null, true, null);
-        boardManager.handleEvent(event, nextRankedIssueUtil);
+        boardManager.handleEvent(event);
         boardNode = getJsonCheckingViewIdAndUsers(4, "brian", "jason", "kabir");
         checkNoBlacklist(boardNode);
         checkComponents(boardNode);
@@ -1561,7 +1561,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         //Rank an issue to before a blacklisted issue and check board
         issueRegistry.rerankIssue("TDP-1", "TDP-3");
         JirbanIssueEvent event = JirbanIssueEvent.createUpdateEvent("TDP-1", "TDP", null, null, null, null, null, null, null, true, null);
-        boardManager.handleEvent(event, nextRankedIssueUtil);
+        boardManager.handleEvent(event);
         ModelNode boardNode = getJsonCheckingViewIdAndUsers(1, "brian", "kabir");
         checkBlacklist(boardNode, new String[]{"BAD"}, null, null, "TDP-3", "TDP-4");
         checkComponents(boardNode);
@@ -1571,7 +1571,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         //Try again, board should be the same
         issueRegistry.rerankIssue("TDP-1", "TDP-3");
         event = JirbanIssueEvent.createUpdateEvent("TDP-1", "TDP", null, null, null, null, null, null, null, true, null);
-        boardManager.handleEvent(event, nextRankedIssueUtil);
+        boardManager.handleEvent(event);
         boardNode = getJsonCheckingViewIdAndUsers(2, "brian", "kabir");
         checkBlacklist(boardNode, new String[]{"BAD"}, null, null, "TDP-3", "TDP-4");
         checkComponents(boardNode);
@@ -1581,7 +1581,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         //Rank somewhere not blacklisted
         issueRegistry.rerankIssue("TDP-1", "TDP-7");
         event = JirbanIssueEvent.createUpdateEvent("TDP-1", "TDP", null, null, null, null, null, null, null, true, null);
-        boardManager.handleEvent(event, nextRankedIssueUtil);
+        boardManager.handleEvent(event);
         boardNode = getJsonCheckingViewIdAndUsers(3, "brian", "kabir");
         checkBlacklist(boardNode, new String[]{"BAD"}, null, null, "TDP-3", "TDP-4");
         checkComponents(boardNode);
@@ -1612,7 +1612,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         //Rank an issue to before a blacklisted issue. There are only blacklisted issues left, so the issue should get inserted at the end
         issueRegistry.rerankIssue("TDP-1", "TDP-4");
         JirbanIssueEvent event = JirbanIssueEvent.createUpdateEvent("TDP-1", "TDP", null, null, null, null, null, null, null, true, null);
-        boardManager.handleEvent(event, nextRankedIssueUtil);
+        boardManager.handleEvent(event);
         ModelNode boardNode = getJsonCheckingViewIdAndUsers(1, "brian", "kabir");
         checkBlacklist(boardNode, new String[]{"BAD"}, null, null, "TDP-4", "TDP-5", "TDP-6", "TDP-7");
         checkComponents(boardNode);

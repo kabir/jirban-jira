@@ -44,7 +44,6 @@ import java.util.function.Supplier;
 
 import org.jboss.dmr.ModelNode;
 import org.jirban.jira.JirbanLogger;
-import org.jirban.jira.api.NextRankedIssueUtil;
 import org.jirban.jira.impl.JiraInjectables;
 import org.jirban.jira.impl.JirbanIssueEvent;
 import org.jirban.jira.impl.config.BoardConfig;
@@ -117,10 +116,10 @@ public class Board {
         return new Builder(jiraInjectables, boardConfig, boardOwner);
     }
 
-    public Board handleEvent(JiraInjectables jiraInjectables, NextRankedIssueUtil nextRankedIssueUtil, ApplicationUser boardOwner, JirbanIssueEvent event,
+    public Board handleEvent(JiraInjectables jiraInjectables, ApplicationUser boardOwner, JirbanIssueEvent event,
                              BoardChangeRegistry changeRegistry) throws SearchException {
         Updater boardUpdater = new Updater(jiraInjectables, this, boardOwner, changeRegistry);
-        return boardUpdater.handleEvent(event, nextRankedIssueUtil);
+        return boardUpdater.handleEvent(event);
     }
 
     public ModelNode serialize(JiraInjectables jiraInjectables, boolean backlog, ApplicationUser user) {
@@ -477,14 +476,14 @@ public class Board {
 
         }
 
-        Board handleEvent(JirbanIssueEvent event, NextRankedIssueUtil nextRankedIssueUtil) throws SearchException {
+        Board handleEvent(JirbanIssueEvent event) throws SearchException {
             switch (event.getType()) {
                 case DELETE:
                     return handleDeleteEvent(event);
                 case CREATE:
-                    return handleCreateOrUpdateIssue(event, nextRankedIssueUtil, true);
+                    return handleCreateOrUpdateIssue(event, true);
                 case UPDATE:
-                    return handleCreateOrUpdateIssue(event, nextRankedIssueUtil, false);
+                    return handleCreateOrUpdateIssue(event, false);
                 default:
                     throw new IllegalArgumentException("Unknown event type " + event.getType());
             }
@@ -543,7 +542,7 @@ public class Board {
             return boardCopy;
         }
 
-        Board handleCreateOrUpdateIssue(JirbanIssueEvent event, NextRankedIssueUtil nextRankedIssueUtil, boolean create) throws SearchException {
+        Board handleCreateOrUpdateIssue(JirbanIssueEvent event, boolean create) throws SearchException {
 
             JirbanLogger.LOGGER.debug("Board.Updater.handleCreateOrUpdateIssue - Handling create or update event for {}; create: {}", event.getIssueKey(), create);
             if (!create && board.blacklist.isBlacklisted(event.getIssueKey())) {
@@ -601,7 +600,7 @@ public class Board {
             final Assignee issueAssignee = getOrCreateIssueAssignee(evtDetail);
             final Set<Component> issueComponents = getOrCreateIssueComponents(evtDetail);
 
-            final BoardProject.Updater projectUpdater = project.updater(jiraInjectables, nextRankedIssueUtil, this, boardOwner);
+            final BoardProject.Updater projectUpdater = project.updater(jiraInjectables, this, boardOwner);
             final Map<String, CustomFieldValue> customFieldValues
                     = CustomFieldValue.loadCustomFieldValues(projectUpdater, evtDetail.getCustomFieldValues());
 

@@ -34,7 +34,6 @@ import java.util.Set;
 
 import org.jboss.dmr.ModelNode;
 import org.jirban.jira.JirbanLogger;
-import org.jirban.jira.api.NextRankedIssueUtil;
 import org.jirban.jira.impl.JiraInjectables;
 import org.jirban.jira.impl.config.BoardProjectConfig;
 import org.jirban.jira.impl.config.CustomFieldConfig;
@@ -125,14 +124,14 @@ public class BoardProject {
     }
 
     public BoardProject copyAndDeleteIssue(Issue deleteIssue) throws SearchException {
-        Updater updater = new Updater(null, null, null, this, null);
+        Updater updater = new Updater(null, null, this, null);
         updater.deleteIssue(deleteIssue);
         return updater.build();
     }
 
-    public Updater updater(JiraInjectables jiraInjectables, NextRankedIssueUtil nextRankedIssueUtil, Board.Updater boardUpdater,
+    public Updater updater(JiraInjectables jiraInjectables, Board.Updater boardUpdater,
                            ApplicationUser boardOwner) {
-        return new Updater(jiraInjectables, nextRankedIssueUtil, boardUpdater, this, boardOwner);
+        return new Updater(jiraInjectables, boardUpdater, this, boardOwner);
     }
 
     public boolean isBacklogState(String state) {
@@ -336,15 +335,13 @@ public class BoardProject {
      */
     static class Updater extends Accessor {
         private final BoardProject project;
-        private final NextRankedIssueUtil nextRankedIssueUtil;
         private Issue newIssue;
         private List<String> rankedIssueKeys;
 
 
-        Updater(JiraInjectables jiraInjectables, NextRankedIssueUtil nextRankedIssueUtil, Board.Accessor board, BoardProject project,
+        Updater(JiraInjectables jiraInjectables, Board.Accessor board, BoardProject project,
                        ApplicationUser boardOwner) {
             super(jiraInjectables, board, project.projectConfig, boardOwner);
-            this.nextRankedIssueUtil = nextRankedIssueUtil;
             JirbanLogger.LOGGER.debug("BoardProject.Updater - init {}", project.projectConfig.getCode());
             this.project = project;
         }
@@ -382,11 +379,13 @@ public class BoardProject {
         }
 
         List<String> rankIssues(String issueKey) throws SearchException {
-            String nextIssueKey = nextRankedIssueUtil.findNextRankedIssue(this.projectConfig, boardOwner, issueKey);
-            //If the next issue is blacklisted, keep searching until we find the next valid one
-            while (nextIssueKey != null && board.getBlacklist().isBlackListed(nextIssueKey)) {
-                nextIssueKey = nextRankedIssueUtil.findNextRankedIssue(this.projectConfig, boardOwner, nextIssueKey);
-            }
+            //TODO
+            String nextIssueKey = null;
+//            String nextIssueKey = nextRankedIssueUtil.findNextRankedIssue(this.projectConfig, boardOwner, issueKey);
+//            //If the next issue is blacklisted, keep searching until we find the next valid one
+//            while (nextIssueKey != null && board.getBlacklist().isBlackListed(nextIssueKey)) {
+//                nextIssueKey = nextRankedIssueUtil.findNextRankedIssue(this.projectConfig, boardOwner, nextIssueKey);
+//            }
             final List<String> newRankedKeys = new ArrayList<>();
             if (nextIssueKey == null) {
                 //Add it at the end

@@ -31,7 +31,6 @@ import java.util.Map;
 import org.jboss.dmr.ModelNode;
 import org.jirban.jira.api.BoardConfigurationManager;
 import org.jirban.jira.api.BoardManager;
-import org.jirban.jira.api.NextRankedIssueUtil;
 import org.jirban.jira.impl.BoardConfigurationManagerBuilder;
 import org.jirban.jira.impl.BoardManagerBuilder;
 import org.jirban.jira.impl.JirbanIssueEvent;
@@ -68,7 +67,6 @@ public abstract class AbstractBoardTest {
     protected BoardManager boardManager;
     protected UserManager userManager;
     protected IssueRegistry issueRegistry;
-    protected NextRankedIssueUtil nextRankedIssueUtil;
     protected SearchCallback searchCallback = new SearchCallback();
 
     @Before
@@ -94,7 +92,6 @@ public abstract class AbstractBoardTest {
 
         IssueRegistry issueRegistry = new IssueRegistry(userManager);
         this.issueRegistry = issueRegistry;
-        this.nextRankedIssueUtil = issueRegistry;
 
         SearchService searchService = new SearchServiceBuilder(worker)
                 .setIssueRegistry(issueRegistry)
@@ -107,8 +104,7 @@ public abstract class AbstractBoardTest {
                 .setBoardConfigurationManager(cfgManager)
                 .setUserManager(userManager)
                 .setSearchService(searchService)
-                .setIssueLinkManager(issueLinkManager)
-                .setNextRankedIssueUtil(nextRankedIssueUtil);
+                .setIssueLinkManager(issueLinkManager);
 
         if (init != null) {
             init.initialise(boardManagerBuilder);
