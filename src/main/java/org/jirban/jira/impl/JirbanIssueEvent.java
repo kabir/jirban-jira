@@ -106,22 +106,11 @@ public class JirbanIssueEvent {
         return new JirbanIssueEvent(Type.UPDATE, issueKey, projectCode, detail);
     }
 
-    public boolean isRecalculateState() {
-        if (type == Type.DELETE) {
-            return false;
-        } else if (type == Type.CREATE) {
-            return true;
-        } else if (type == Type.UPDATE) {
-            return detail.isReranked();
-        }
-        return false;
-    }
-
     public boolean isRerankOnly() {
         if (type == Type.UPDATE) {
             if (detail.isReranked()) {
                 return detail.getComponents() == null && detail.getIssueType() == null && detail.getAssignee() == null &&
-                        detail.getPriority() == null && detail.getState() == null && detail.getSummary() == null;
+                        detail.getPriority() == null && detail.getState() == null && detail.getSummary() == null && detail.getCustomFieldValues().size() == 0;
 
             }
         }

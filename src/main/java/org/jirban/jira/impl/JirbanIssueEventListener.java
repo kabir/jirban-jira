@@ -21,9 +21,11 @@
  */
 package org.jirban.jira.impl;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,13 +48,11 @@ import com.atlassian.core.util.map.EasyMap;
 import com.atlassian.crowd.embedded.api.User;
 import com.atlassian.event.api.EventListener;
 import com.atlassian.event.api.EventPublisher;
-import com.atlassian.greenhopper.service.lexorank.balance.LexoRankBalanceEvent;
 import com.atlassian.jira.bc.project.component.ProjectComponent;
 import com.atlassian.jira.event.issue.IssueEvent;
 import com.atlassian.jira.event.type.EventType;
 import com.atlassian.jira.issue.Issue;
 import com.atlassian.jira.issue.index.IndexException;
-import com.atlassian.jira.issue.index.ReindexIssuesCompletedEvent;
 import com.atlassian.jira.project.Project;
 import com.atlassian.jira.project.ProjectManager;
 import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
@@ -113,7 +113,7 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
 
     private final BoardManager boardManager;
 
-    private final WrappedThreadLocal<JirbanEventWrapper> delayedEvents = new WrappedThreadLocal<>();
+    private final WrappedThreadLocal<JirbanRankEventWrapper> rankEvents = new WrappedThreadLocal<>();
 
 
     /**
@@ -146,53 +146,20 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
     public void destroy() throws Exception {
         // unregister ourselves with the EventPublisher
         eventPublisher.unregister(this);
-        delayedEvents.clearAll();
+        rankEvents.clearAll();
     }
 
     @EventListener
     public void onRankEvent(JirbanRankEvent event) {
-        System.out.println("=====> Rank event " + event);
+        JirbanLogger.LOGGER.debug("JirbanRankEvent {} on thread {}", event, Thread.currentThread().getName());
+        rankEvents.set(new JirbanRankEventWrapper(event));
     }
 
-    /**
-     * This is the event that initiates a re-rank.
-     * This will be followed by both an IssueEvent and a ReindexIssuesCompletedEvent, although the order of the two
-     * is not set in stone.
-     *
-     * @param event the rerank event
-     */
     @EventListener
-    public void onRankEvent(LexoRankBalanceEvent event) {
-        JirbanLogger.LOGGER.debug("LexoRankBalanceEvent on thread {}", Thread.currentThread().getName());
-
-        JirbanEventWrapper wrapper = new JirbanEventWrapper(true);
-        delayedEvents.set(wrapper);
-
+    public void onRankDoneEvent(JirbanRankDoneEvent event) {
+        JirbanLogger.LOGGER.debug("JirbanRankDoneEvent {} on thread {}", event, Thread.currentThread().getName());
+        rankEvents.remove();
     }
-
-    /**
-     * Receives any {@code ReindexIssuesCompletedEvent}s sent by JIRA.
-     *
-     * @param event the event passed to us
-     */
-    @EventListener
-    public void onEvent(ReindexIssuesCompletedEvent event) throws IndexException {
-        JirbanLogger.LOGGER.debug("ReindexIssuesCompletedEvent on thread {}", Thread.currentThread().getName());
-
-        JirbanEventWrapper delayedEvent = delayedEvents.get();
-        if (delayedEvent != null) {
-            delayedEvent.reindexed = true;
-            if (delayedEvent.isComplete()) {
-                try {
-                    JirbanLogger.LOGGER.debug("Handle delayed event {}", delayedEvent.issueEvent.getIssueKey());
-                    boardManager.handleEvent(delayedEvent.issueEvent);
-                } finally {
-                    delayedEvents.remove();
-                }
-            }
-        }
-    }
-
     /**
      * Receives any {@code IssueEvent}s sent by JIRA
      * @param issueEvent the event passed to us
@@ -211,22 +178,14 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
         if (eventTypeId == EventType.ISSUE_CREATED_ID) {
             //Does not have a worklog
             onCreateEvent(issueEvent);
-
-            //Only relevant for updates (of state/rank)
-            delayedEvents.remove();
         } else if (eventTypeId == EventType.ISSUE_DELETED_ID) {
             //Does not have a worklog
             onDeleteEvent(issueEvent);
 
-            //Only relevant for updates (of state/rank)
-            delayedEvents.remove();
         } else if (eventTypeId == EventType.ISSUE_MOVED_ID) {
             //Has a worklog. We need to take into account the old values to delete the issue from the old project boards,
             //while we use the issue in the event to create the issue in the new project boards.
             onMoveEvent(issueEvent);
-
-            //Only relevant for updates (of state/rank)
-            delayedEvents.remove();
         } else if (eventTypeId == EventType.ISSUE_ASSIGNED_ID ||
                 eventTypeId == EventType.ISSUE_UPDATED_ID ||
                 eventTypeId == EventType.ISSUE_GENERICEVENT_ID ||
@@ -271,7 +230,7 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
                 issue.getIssueTypeObject().getName(), issue.getPriorityObject().getName(), issue.getSummary(),
                 issue.getAssignee(), issue.getComponentObjects(), issue.getStatusObject().getName(), values);
 
-        passEventToBoardManagerOrDelay(event);
+        boardManager.handleEvent(event);
 
         //TODO there could be linked issues
     }
@@ -283,13 +242,13 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
         }
 
         final JirbanIssueEvent event = JirbanIssueEvent.createDeleteEvent(issue.getKey(), issue.getProjectObject().getKey());
-        passEventToBoardManagerOrDelay(event);
+        boardManager.handleEvent(event);
     }
 
     private void onWorklogEvent(IssueEvent issueEvent) throws IndexException {
         final Issue issue = issueEvent.getIssue();
         if (!isAffectedProject(issue.getProjectObject().getKey())) {
-            delayedEvents.remove();
+            recordNotRelevant(issue.getKey());
             return;
         }
 
@@ -346,7 +305,10 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
                 //Always pass in the existing/old state of the issue
                 oldState != null ? oldState : issue.getStatusObject().getName(),
                 state, reranked, customFieldValues);
-        passEventToBoardManagerOrDelay(event);
+        boardManager.handleEvent(event);
+        if (event.isRerankOnly()) {
+            handleRerankEvent(issue.getKey());
+        }
     }
 
     private void onMoveEvent(IssueEvent issueEvent) throws IndexException {
@@ -374,7 +336,7 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
 
         if (isAffectedProject(oldProjectCode)) {
             final JirbanIssueEvent event = JirbanIssueEvent.createDeleteEvent(oldIssueKey, oldProjectCode);
-            passEventToBoardManagerOrDelay(event);
+            boardManager.handleEvent(event);
         }
 
         //2) Then we can do a create on the project with the issue in the event
@@ -390,7 +352,7 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
         final JirbanIssueEvent event = JirbanIssueEvent.createCreateEvent(issue.getKey(), issue.getProjectObject().getKey(),
                 issue.getIssueTypeObject().getName(), issue.getPriorityObject().getName(), issue.getSummary(),
                 issue.getAssignee(), issue.getComponentObjects(), newState, Collections.emptyMap());
-        passEventToBoardManagerOrDelay(event);
+        boardManager.handleEvent(event);
     }
 
     private List<GenericValue> getWorkLog(IssueEvent issueEvent) {
@@ -409,36 +371,35 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
         return changeItems;
     }
 
-    private void passEventToBoardManagerOrDelay(JirbanIssueEvent event) throws IndexException {
-        if (event.isRecalculateState()) {
-            JirbanLogger.LOGGER.debug("Possible delayed event {}", event.getIssueKey());
-            //Possible delay
-            JirbanEventWrapper wrapper = delayedEvents.get();
-            if (wrapper == null) {
-                //We are not a rerank, but a state move. Delay processing of the event until the ReindexIssuesCompletedEvent
-                //is received. For this use-case we always receive the IssueEvent before the ReindexIssuesCompletedEvent.
-                wrapper = new JirbanEventWrapper(false);
-                wrapper.issueEvent = event;
-                delayedEvents.set(wrapper);
-                JirbanLogger.LOGGER.debug("Delaying event {}", event.getIssueKey());
-            } else {
-                //We already have an event wrapper. The only thing which would have put it here is if a ranking op was done
-                //so that the LexoRankBalanceEvent was triggered.
-                //The IssueEvent
-                wrapper.issueEvent = event;
-                if (wrapper.isComplete()) {
-                    //It is complete
-                    JirbanLogger.LOGGER.debug("Handle delayed event {}", event.getIssueKey());
-                    boardManager.handleEvent(event);
-                    delayedEvents.remove();
-                }
-            }
-        } else {
-            //We can handle the event right away
-            JirbanLogger.LOGGER.debug("Handling immediate event {}", event.getIssueKey());
-            boardManager.handleEvent(event);
+    private void recordNotRelevant(String issueKey) {
+        JirbanRankEventWrapper rankEventWrapper = rankEvents.get();
+        if (rankEventWrapper != null) {
+            rankEventWrapper.recordRelevant(issueKey, false);
+            checkCompleteRankEvent(rankEventWrapper);
         }
     }
+
+    private void handleRerankEvent(String issueKey) {
+        JirbanRankEventWrapper rankEventWrapper = rankEvents.get();
+        if (rankEventWrapper != null) {
+            rankEventWrapper.recordRelevant(issueKey, true);
+            checkCompleteRankEvent(rankEventWrapper);
+        }
+    }
+
+    private void checkCompleteRankEvent(JirbanRankEventWrapper rankEventWrapper) {
+        if (!rankEventWrapper.hasRelevantIssues()) {
+            rankEvents.remove();
+            return;
+        }
+        if (rankEventWrapper.isComplete()) {
+            JirbanRankEvent rankEvent = rankEventWrapper.getRankEvent();
+            rankEvents.remove();
+            //TODO handle change
+            System.out.println("*** Reranking issues " + rankEvent);
+        }
+    }
+
 
     private boolean isAffectedProject(String projectCode) {
         return boardManager.hasBoardsForProjectCode(projectCode);
@@ -471,28 +432,43 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
         }
     }
 
-    /**
-     * Deal with Jira's strange event mechanism
-     *
-     *
-     */
-    private static class JirbanEventWrapper {
-        private final boolean rerankEvent;
+    private static class JirbanRankEventWrapper {
+        private final JirbanRankEvent rankEvent;
+        private final Set<String> rankedIssues;
+        private final Set<String> relevantIssues;
 
-        private volatile JirbanIssueEvent issueEvent;
-
-        private volatile boolean reindexed;
-
-        JirbanEventWrapper(boolean rerankEvent) {
-            this.rerankEvent = rerankEvent;
+        public JirbanRankEventWrapper(JirbanRankEvent rankEvent) {
+            this.rankEvent = rankEvent;
+            rankedIssues = new HashSet<>(rankEvent.getIssues());
+            relevantIssues = new HashSet<>(rankEvent.getIssues());
         }
 
-        public boolean isComplete() {
-            if (rerankEvent) {
-                return issueEvent != null && reindexed;
-            } else {
-                return issueEvent != null && reindexed;
+        void recordRelevant(String issueKey, boolean relevant) {
+            if (!relevant) {
+                relevantIssues.remove(issueKey);
             }
+            rankedIssues.remove(issueKey);
+        }
+
+        boolean hasRelevantIssues() {
+            return relevantIssues.size() != 0;
+        }
+
+        boolean isComplete() {
+            return rankedIssues.size() == 0;
+        }
+
+        JirbanRankEvent getRankEvent() {
+            if (rankEvent.getIssues().size() == relevantIssues.size()) {
+                return rankEvent;
+            }
+            List<String> newIssues = new ArrayList<>();
+            for (String key : rankEvent.getIssues()) {
+                if (relevantIssues.contains(key)) {
+                    newIssues.add(key);
+                }
+            }
+            return JirbanRankEvent.create(newIssues, rankEvent.getAfterKey(), rankEvent.getBeforeKey());
         }
     }
 }

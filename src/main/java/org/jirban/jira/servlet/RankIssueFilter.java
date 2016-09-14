@@ -24,6 +24,7 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jirban.jira.JirbanLogger;
 import org.jirban.jira.impl.Constants;
+import org.jirban.jira.impl.JirbanRankDoneEvent;
 import org.jirban.jira.impl.JirbanRankEvent;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -39,10 +40,11 @@ public class RankIssueFilter implements Filter {
     private final String RANK_1_0 = "/rest/greenhopper/1.0/rank";
 
     private final String API_RANK_1_0 = "/rest/greenhopper/1.0/rank";
-    private final String API_RANK_BEFORE_1_0 = "/rest/greenhopper/1.0/api/rank/before";
-    private final String API_RANK_AFTER_1_0 = "/rest/greenhopper/1.0/api/rank/after";
-    private final String RANK_GLOBAL_FIRST_1_0 = "/rest/greenhopper/1.0/rank/global/first";
-    private final String RANK_GLOBAL_LAST_1_0 = "/rest/greenhopper/1.0/rank/global/last";
+    //These don't seem to be used by Jira Agile
+    //private final String API_RANK_BEFORE_1_0 = "/rest/greenhopper/1.0/api/rank/before";
+    //private final String API_RANK_AFTER_1_0 = "/rest/greenhopper/1.0/api/rank/after";
+    //private final String RANK_GLOBAL_FIRST_1_0 = "/rest/greenhopper/1.0/rank/global/first";
+    //private final String RANK_GLOBAL_LAST_1_0 = "/rest/greenhopper/1.0/rank/global/last";
 
     @ComponentImport
     private final EventPublisher eventPublisher;
@@ -67,12 +69,10 @@ public class RankIssueFilter implements Filter {
         }
         if (uri.endsWith(API_RANK_1_0)) {
 
-            parseBodyEmitEventAndDoFilter(req, response, chain, uri, modelNode -> {
-                return JirbanRankEvent.create(
-                        modelNodeListToStringList(modelNode.get(Constants.RANK_ISSUE_KEYS)),
-                        modelNodeToString(modelNode.get(Constants.RANK_BEFORE_KEY)),
-                        modelNodeToString(modelNode.get(Constants.RANK_AFTER_KEY)));
-            });
+            parseBodyEmitEventAndDoFilter(req, response, chain, uri, modelNode -> JirbanRankEvent.create(
+                    modelNodeListToStringList(modelNode.get(Constants.RANK_ISSUE_KEYS)),
+                    modelNodeToString(modelNode.get(Constants.RANK_AFTER_KEY)),
+                    modelNodeToString(modelNode.get(Constants.RANK_BEFORE_KEY))));
         } else {
             JirbanLogger.LOGGER.warn("RankIssueFilter ignoring uri {}", uri);
             chain.doFilter(request, response);
@@ -92,7 +92,11 @@ public class RankIssueFilter implements Filter {
 
             JirbanRankEvent rankEvent = eventFactory.apply(modelNode);
             eventPublisher.publish(rankEvent);
-            chain.doFilter(wrapper, response);
+            try {
+                chain.doFilter(wrapper, response);
+            } finally {
+                eventPublisher.publish(new JirbanRankDoneEvent());
+            }
         } catch (Exception e) {
             JirbanLogger.LOGGER.error("An error happened processing the rank event {} {}", uri, modelNode, e);
         }
