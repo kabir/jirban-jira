@@ -6,6 +6,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Function;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -18,7 +21,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 
 import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.ModelType;
 import org.jirban.jira.JirbanLogger;
+import org.jirban.jira.impl.Constants;
+import org.jirban.jira.impl.JirbanRankEvent;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.atlassian.event.api.EventPublisher;
@@ -60,18 +66,37 @@ public class RankIssueFilter implements Filter {
             uri.substring(0, uri.length() - 1);
         }
         if (uri.endsWith(API_RANK_1_0)) {
-            //We need to check the request body, which will also be needed later, so wrap it
-            final byte[] bodyBytes = toByteArray(req.getInputStream());
 
-            ModelNode modelNode = ModelNode.fromJSONStream(new ByteArrayInputStream(bodyBytes));
-            System.out.println(modelNode);
-            HttpServletRequestWrapper wrapper = new JirbanHttpServletRequestWrapper(req, bodyBytes);
-
-            chain.doFilter(wrapper, response);
+            parseBodyEmitEventAndDoFilter(req, response, chain, uri, modelNode -> {
+                return JirbanRankEvent.create(
+                        modelNodeListToStringList(modelNode.get(Constants.RANK_ISSUE_KEYS)),
+                        modelNodeToString(modelNode.get(Constants.RANK_BEFORE_KEY)),
+                        modelNodeToString(modelNode.get(Constants.RANK_AFTER_KEY)));
+            });
         } else {
             JirbanLogger.LOGGER.warn("RankIssueFilter ignoring uri {}", uri);
             chain.doFilter(request, response);
         }
+    }
+
+    private void parseBodyEmitEventAndDoFilter(HttpServletRequest req, ServletResponse response, FilterChain chain,
+                                               String uri, Function<ModelNode, JirbanRankEvent> eventFactory) throws IOException, ServletException {
+        ModelNode modelNode = null;
+        try {
+            //We need to check the request body, which will also be needed later, so wrap it
+            final byte[] bodyBytes = toByteArray(req.getInputStream());
+
+            modelNode = ModelNode.fromJSONStream(new ByteArrayInputStream(bodyBytes));
+            System.out.println(modelNode);
+            HttpServletRequestWrapper wrapper = new JirbanHttpServletRequestWrapper(req, bodyBytes);
+
+            JirbanRankEvent rankEvent = eventFactory.apply(modelNode);
+            eventPublisher.publish(rankEvent);
+            chain.doFilter(wrapper, response);
+        } catch (Exception e) {
+            JirbanLogger.LOGGER.error("An error happened processing the rank event {} {}", uri, modelNode, e);
+        }
+
     }
 
     @Override
@@ -88,6 +113,24 @@ public class RankIssueFilter implements Filter {
             output.write(buffer, 0, bytesRead);
         }
         return output.toByteArray();
+    }
+
+    private List<String> modelNodeListToStringList(ModelNode node) {
+        List<String> result = new ArrayList<>();
+        if (node.getType() != ModelType.LIST) {
+            return result;
+        }
+        for (ModelNode entry : node.asList()) {
+            result.add(entry.asString());
+        }
+        return result;
+    }
+
+    private String modelNodeToString(ModelNode node) {
+        if (!node.isDefined()) {
+            return null;
+        }
+        return node.asString();
     }
 
     private static class JirbanHttpServletRequestWrapper extends HttpServletRequestWrapper {

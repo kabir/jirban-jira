@@ -74,6 +74,9 @@ public class Constants {
     public static final String RANKED = "ranked";
     public static final String RANK_CUSTOM_FIELD = "rank-custom-field";
     public static final String RANK_CUSTOM_FIELD_ID = "rank-custom-field-id";
+    public static final String RANK_AFTER_KEY = "rankAfterKey";
+    public static final String RANK_BEFORE_KEY = "rankBeforeKey";
+    public static final String RANK_ISSUE_KEYS = "issueKeys";
     public static final String REMOVED_ISSUES = "removed-issues";
     public static final String STATE = "state";
     public static final String STATE_LINKS = "state-links";

@@ -153,6 +153,11 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
         delayedEvents.clearAll();
     }
 
+    @EventListener
+    public void onRankEvent(JirbanRankEvent event) {
+        System.out.println("=====> Rank event " + event);
+    }
+
     /**
      * This is the event that initiates a re-rank.
      * This will be followed by both an IssueEvent and a ReindexIssuesCompletedEvent, although the order of the two
