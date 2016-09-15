@@ -234,7 +234,10 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
 
     @Override
     public void handleEvent(JirbanIssueEvent event) {
-        //Jira seems to only handle one event at a time, which is good
+        if (event.isRerankOnly()) {
+            //Rerank is handled by handleRankEvent()
+            return;
+        }
 
         List<String> boardCodes = boardConfigurationManager.getBoardCodesForProjectCode(event.getProjectCode());
         for (String boardCode : boardCodes) {
@@ -271,6 +274,47 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
 
                 //Last parameter is the exception (it does not match a {} entry)
                 JirbanLogger.LOGGER.debug("BoardManagerImpl.handleEvent - Error handling event {}", event.getIssueKey(), e);
+            }
+        }
+    }
+
+    @Override
+    public void handleRankEvent(JirbanRankEvent event) {
+        List<String> boardCodes = boardConfigurationManager.getBoardCodesForProjectCode(event.getProjectCode());
+        for (String boardCode : boardCodes) {
+            final Board board;
+            final BoardChangeRegistry changeRegistry;
+            synchronized (this) {
+                board = boards.get(boardCode);
+                if (board == null) {
+                    continue;
+                }
+                changeRegistry = boardChangeRegistries.get(boardCode);
+            }
+            final ApplicationUser boardOwner = jiraInjectables.getJiraUserManager().getUserByKey(board.getConfig().getOwningUserKey());
+            try {
+                JirbanLogger.LOGGER.debug("BoardManagerImpl.handleEvent - Handling rank event on board {}", board.getConfig().getCode());
+                Board newBoard = board.handleRankEvent(jiraInjectables, boardOwner, event, changeRegistry);
+                if (newBoard == null) {
+                    //The changes in the issue were not relevant
+                    return;
+                }
+                synchronized (this) {
+                    //An event ending up in forceRefresh() might have deleted the board and the change registry
+                    //with the intent of forcing the next read to perform a full refresh
+                    //We have the new board returned, but check if we need to recreate the registry
+                    if (changeRegistry.isValid()) {
+                        changeRegistry.setBoard(newBoard);
+                        boards.put(boardCode, newBoard);
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                //Last parameter is the exception (it does not match a {} entry)
+                JirbanLogger.LOGGER.error("BoardManagerImpl.handleRankEvent - Error handling event {} - {}", event, e.getMessage());
+
+                //Last parameter is the exception (it does not match a {} entry)
+                JirbanLogger.LOGGER.debug("BoardManagerImpl.handleRankEvent - Error handling event {}", event, e);
             }
         }
     }

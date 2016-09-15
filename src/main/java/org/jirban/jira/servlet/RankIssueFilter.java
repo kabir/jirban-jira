@@ -7,7 +7,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Function;
 
 import javax.servlet.Filter;
@@ -46,6 +49,8 @@ public class RankIssueFilter implements Filter {
     //private final String RANK_GLOBAL_FIRST_1_0 = "/rest/greenhopper/1.0/rank/global/first";
     //private final String RANK_GLOBAL_LAST_1_0 = "/rest/greenhopper/1.0/rank/global/last";
 
+    Set<String> badUrlsSeen = Collections.synchronizedSet(new HashSet<>());
+
     @ComponentImport
     private final EventPublisher eventPublisher;
 
@@ -68,14 +73,32 @@ public class RankIssueFilter implements Filter {
             uri.substring(0, uri.length() - 1);
         }
         if (uri.endsWith(API_RANK_1_0)) {
-
             parseBodyEmitEventAndDoFilter(req, response, chain, uri, modelNode -> JirbanRankEvent.create(
                     modelNodeListToStringList(modelNode.get(Constants.RANK_ISSUE_KEYS)),
                     modelNodeToString(modelNode.get(Constants.RANK_AFTER_KEY)),
                     modelNodeToString(modelNode.get(Constants.RANK_BEFORE_KEY))));
         } else {
-            JirbanLogger.LOGGER.warn("RankIssueFilter ignoring uri {}", uri);
-            chain.doFilter(request, response);
+            if (badUrlsSeen.contains(uri)) {
+                chain.doFilter(request, response);
+            } else {
+                JirbanLogger.LOGGER.warn("Unimplemented uri for ranking {}", uri);
+                //Log once that this url has been used
+                ModelNode modelNode = null;
+                try {
+                    //We need to check the request body, which will also be needed later, so wrap it
+                    final byte[] bodyBytes = toByteArray(req.getInputStream());
+
+                    modelNode = ModelNode.fromJSONStream(new ByteArrayInputStream(bodyBytes));
+                    JirbanLogger.LOGGER.warn("Input for unhandled uri for ranking {} is {}", uri, modelNode);
+                    HttpServletRequestWrapper wrapper = new JirbanHttpServletRequestWrapper(req, bodyBytes);
+                    chain.doFilter(wrapper, response);
+                } catch (Exception e) {
+                    //TODO report in the planned one time mail thing
+                    JirbanLogger.LOGGER.error("An error happened processing the rank event {} {}", uri, modelNode, e);
+                }
+
+                badUrlsSeen.add(uri);
+            }
         }
     }
 
@@ -91,6 +114,10 @@ public class RankIssueFilter implements Filter {
             HttpServletRequestWrapper wrapper = new JirbanHttpServletRequestWrapper(req, bodyBytes);
 
             JirbanRankEvent rankEvent = eventFactory.apply(modelNode);
+            if (rankEvent == null) {
+                //If the event is null, it did not pass validation, so we don't publish it
+                return;
+            }
             eventPublisher.publish(rankEvent);
             try {
                 chain.doFilter(wrapper, response);
@@ -100,7 +127,6 @@ public class RankIssueFilter implements Filter {
         } catch (Exception e) {
             JirbanLogger.LOGGER.error("An error happened processing the rank event {} {}", uri, modelNode, e);
         }
-
     }
 
     @Override

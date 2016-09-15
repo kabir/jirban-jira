@@ -46,6 +46,7 @@ import org.jboss.dmr.ModelNode;
 import org.jirban.jira.JirbanLogger;
 import org.jirban.jira.impl.JiraInjectables;
 import org.jirban.jira.impl.JirbanIssueEvent;
+import org.jirban.jira.impl.JirbanRankEvent;
 import org.jirban.jira.impl.config.BoardConfig;
 import org.jirban.jira.impl.config.BoardProjectConfig;
 import org.jirban.jira.impl.config.CustomFieldConfig;
@@ -120,6 +121,11 @@ public class Board {
                              BoardChangeRegistry changeRegistry) throws SearchException {
         Updater boardUpdater = new Updater(jiraInjectables, this, boardOwner, changeRegistry);
         return boardUpdater.handleEvent(event);
+    }
+
+    public Board handleRankEvent(JiraInjectables jiraInjectables, ApplicationUser boardOwner, JirbanRankEvent event, BoardChangeRegistry changeRegistry) {
+        Updater boardUpdater = new Updater(jiraInjectables, this, boardOwner, changeRegistry);
+        return boardUpdater.handleRankEvent(event);
     }
 
     public ModelNode serialize(JiraInjectables jiraInjectables, boolean backlog, ApplicationUser user) {
@@ -487,6 +493,34 @@ public class Board {
                 default:
                     throw new IllegalArgumentException("Unknown event type " + event.getType());
             }
+        }
+
+        Board handleRankEvent(JirbanRankEvent event) {
+            JirbanLogger.LOGGER.debug("Board.Updater.handleRankEvent - Handling rank event {}", event);
+            final BoardProject project = board.projects.get(event.getProjectCode());
+            if (project == null) {
+                throw new IllegalArgumentException("Can't find project " + event.getProjectCode() +
+                        " in board " + board.boardConfig.getId());
+            }
+            final BoardProject.Updater projectUpdater = project.updater(jiraInjectables, this, boardOwner);
+
+            if (projectUpdater.rerankIssue(event.getIssues(), event.getAfterKey(), event.getBeforeKey())) {
+                final BoardProject projectCopy = projectUpdater.build();
+                final Map<String, BoardProject> projectsCopy = copyAndPut(board.projects, event.getProjectCode(), projectCopy, HashMap::new);
+                Board boardCopy = new Board(board, board.boardConfig,
+                        board.sortedAssignees,
+                        board.sortedComponents,
+                        Collections.unmodifiableMap(allIssuesCopy),
+                        projectsCopy,
+                        SortedCustomFieldValues.Updater.merge(customFieldUpdaters, board.sortedCustomFieldValues),
+                        blacklist.build());
+                boardCopy.updateBoardInProjects();
+
+                //TODO register change
+
+                return boardCopy;
+            }
+            return null;
         }
 
         private Board handleDeleteEvent(JirbanIssueEvent event) throws SearchException {

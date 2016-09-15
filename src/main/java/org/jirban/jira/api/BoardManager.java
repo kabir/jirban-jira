@@ -24,6 +24,7 @@ package org.jirban.jira.api;
 import java.util.Set;
 
 import org.jirban.jira.impl.JirbanIssueEvent;
+import org.jirban.jira.impl.JirbanRankEvent;
 import org.jirban.jira.impl.config.CustomFieldConfig;
 
 import com.atlassian.jira.issue.search.SearchException;
@@ -66,6 +67,8 @@ public interface BoardManager {
      */
     void handleEvent(JirbanIssueEvent event);
 
+    void handleRankEvent(JirbanRankEvent rankEvent);
+
     /**
      * Gets the changes for a board. The client passes in their view id, and the delta is passed back to the client in
      * json format so they can apply it to their own model.
@@ -95,4 +98,5 @@ public interface BoardManager {
      * @return the custom field configs on boards involving the issue.
      */
     Set<CustomFieldConfig> getCustomFieldsForCreateEvent(String projectCode);
+
 }

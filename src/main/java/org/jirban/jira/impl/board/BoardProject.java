@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -355,7 +356,7 @@ public class BoardProject {
             JirbanLogger.LOGGER.debug("BoardProject.Updater.createIssue - created {}", newIssue);
 
             if (newIssue != null) {
-                rankedIssueKeys = rankIssues(issueKey);
+                rankedIssueKeys = rankIssues(Collections.singleton(issueKey), null);
             }
             return newIssue;
         }
@@ -366,10 +367,6 @@ public class BoardProject {
             JirbanLogger.LOGGER.debug("BoardProject.Updater.updateIssue - {}, rankOrStateChanged: {}", existing.getKey(), reranked);
             newIssue = existing.copyForUpdateEvent(this, existing, issueType, priority,
                     summary, issueAssignee, issueComponents, state, customFieldValues);
-            JirbanLogger.LOGGER.debug("BoardProject.Updater - updated issue {} to {}. Reranked: {}", existing, newIssue, reranked);
-            if (reranked) {
-                rankedIssueKeys = rankIssues(existing.getKey());
-            }
             return newIssue;
         }
 
@@ -378,32 +375,61 @@ public class BoardProject {
             rankedIssueKeys.remove(issue.getKey());
         }
 
-        List<String> rankIssues(String issueKey) throws SearchException {
-            //TODO
-            String nextIssueKey = null;
-//            String nextIssueKey = nextRankedIssueUtil.findNextRankedIssue(this.projectConfig, boardOwner, issueKey);
-//            //If the next issue is blacklisted, keep searching until we find the next valid one
-//            while (nextIssueKey != null && board.getBlacklist().isBlackListed(nextIssueKey)) {
-//                nextIssueKey = nextRankedIssueUtil.findNextRankedIssue(this.projectConfig, boardOwner, nextIssueKey);
-//            }
+        boolean rerankIssue(Set<String> issueKeys, String afterKey, String beforeKey) {
+            if (beforeKey != null && board.getIssue(beforeKey) != null) {
+                JirbanLogger.LOGGER.warn("Ranking issue beforeKey {} not found. Perhaps it is done or blacklisted?", beforeKey);
+                return false;
+            }
+            final String nextIssueKey;
+            if (beforeKey != null) {
+                nextIssueKey = beforeKey;
+            } else {
+                if (afterKey == null) {
+                    nextIssueKey = null;
+                } else {
+                    int i = rankedIssueKeys.indexOf(afterKey);
+                    if (i < 0 || i + 1 >= rankedIssueKeys.size()) {
+                        JirbanLogger.LOGGER.warn("Ranking issue afterKey {} not found. Perhaps it is done or blacklisted?", beforeKey);
+                        return false;
+                    }
+                    nextIssueKey = rankedIssueKeys.get(i + 1);
+                }
+            }
+            Set<String> issueKeysCopy = new LinkedHashSet<>();
+            for (String key : issueKeys) {
+                if (board.getIssue(key) != null) {
+                    issueKeysCopy.add(key);
+                }
+            }
+            if (issueKeysCopy.size() == 0) {
+                //None of the issues are visible on the board so just ignore it
+                JirbanLogger.LOGGER.warn("None of the issues to be ranked {} were found. Perhaps thay are done or blacklisted?", issueKeys);
+                return false;
+            }
+
+            rankedIssueKeys = rankIssues(issueKeys, nextIssueKey);
+            return rankedIssueKeys != null;
+        }
+
+        List<String> rankIssues(Set<String> issueKeys, String nextIssueKey) {
             final List<String> newRankedKeys = new ArrayList<>();
             if (nextIssueKey == null) {
-                //Add it at the end
+                //Add issues at the end
                 project.rankedIssueKeys.forEach(key -> {
-                    if (!key.equals(issueKey)) {
-                        //Don't copy the one we are moving to the end
+                    if (!issueKeys.contains(key)) {
+                        //Don't copy the ones we are moving to the end
                         newRankedKeys.add(key);
                     }
                 });
-                newRankedKeys.add(issueKey);
+                newRankedKeys.addAll(issueKeys);
             } else {
                 final String nextKey = nextIssueKey;
                 //Remove it from the middle and add it at the end
                 project.rankedIssueKeys.forEach(key -> {
                     if (key.equals(nextKey)) {
-                        newRankedKeys.add(issueKey);
+                        newRankedKeys.addAll(issueKeys);
                     }
-                    if (!key.equals(issueKey)) {
+                    if (!issueKeys.contains(key)) {
                         newRankedKeys.add(key);
                     }
                 });
@@ -430,11 +456,11 @@ public class BoardProject {
             issueBuilder.load(issues.get(0));
             newIssue = issueBuilder.build();
             JirbanLogger.LOGGER.debug("BoardProject.Updater.loadSingleIssue - found {}", newIssue);
-            rankedIssueKeys = rankIssues(issueKey);
+            rankedIssueKeys = rankIssues(Collections.singleton(issueKey), null);
             return newIssue;
         }
 
-        BoardProject build() throws SearchException {
+        BoardProject build() {
 
             //Update the ranked issue list if a rerank was done
             List<String> rankedIssueKeys =

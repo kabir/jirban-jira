@@ -152,7 +152,9 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
     @EventListener
     public void onRankEvent(JirbanRankEvent event) {
         JirbanLogger.LOGGER.debug("JirbanRankEvent {} on thread {}", event, Thread.currentThread().getName());
-        rankEvents.set(new JirbanRankEventWrapper(event));
+        if (boardManager.hasBoardsForProjectCode(event.getProjectCode())) {
+            rankEvents.set(new JirbanRankEventWrapper(event));
+        }
     }
 
     @EventListener
@@ -306,7 +308,7 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
                 oldState != null ? oldState : issue.getStatusObject().getName(),
                 state, reranked, customFieldValues);
         boardManager.handleEvent(event);
-        if (event.isRerankOnly()) {
+        if (reranked) {
             handleRerankEvent(issue.getKey());
         }
     }
@@ -397,6 +399,7 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
             rankEvents.remove();
             //TODO handle change
             System.out.println("*** Reranking issues " + rankEvent);
+            boardManager.handleRankEvent(rankEvent);
         }
     }
 
