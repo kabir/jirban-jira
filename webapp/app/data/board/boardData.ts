@@ -422,21 +422,6 @@ export class BoardData {
         return this.boardProjects.forKey(projectCode).isValidState(state);
     }
 
-    /**
-     * Gets a list of the valid issues for a state, that an issue can be moved before/after. For example we don't allow
-     * mixing of priority between issues from different projects. When swimlanes are used, we stay within the same swimlane,
-     * or we would have to change the swimlane selector (e.g. assignee, project, priority, component etc.) in the
-     * upstream jira issue.
-     *
-     * @param issueKey the key of the issue
-     * @param toState the board state we are moving to
-     * @returns {IssueData[]} the list of valid issues we can use for positioning
-     */
-    getValidMoveBeforeIssues(issueKey:string, toState:string) {
-        let moveIssue:IssueData = this._issueTable.getIssue(issueKey);
-        return this._projects.getValidMoveBeforeIssues(this._issueTable, this._swimlane, moveIssue, toState);
-    }
-
     setBacklogFromQueryParams(queryParams:IMap<string>, forceBacklog:boolean):void {
         if (forceBacklog) {
             this._showBacklog = true;
