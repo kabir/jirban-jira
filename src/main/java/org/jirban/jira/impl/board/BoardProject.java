@@ -340,7 +340,7 @@ public class BoardProject {
         private List<String> rankedIssueKeys;
 
 
-        Updater(JiraInjectables jiraInjectables, Board.Accessor board, BoardProject project,
+        Updater(JiraInjectables jiraInjectables, Board.Updater board, BoardProject project,
                        ApplicationUser boardOwner) {
             super(jiraInjectables, board, project.projectConfig, boardOwner);
             JirbanLogger.LOGGER.debug("BoardProject.Updater - init {}", project.projectConfig.getCode());
@@ -376,7 +376,9 @@ public class BoardProject {
         }
 
         boolean rerankIssue(Set<String> issueKeys, String afterKey, String beforeKey) {
-            if (beforeKey != null && board.getIssue(beforeKey) != null) {
+            Board board = ((Board.Updater)this.board).getOriginal();
+
+            if (beforeKey != null && board.getIssue(beforeKey) == null) {
                 JirbanLogger.LOGGER.warn("Ranking issue beforeKey {} not found. Perhaps it is done or blacklisted?", beforeKey);
                 return false;
             }

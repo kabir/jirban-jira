@@ -48,6 +48,7 @@ import static org.jirban.jira.impl.Constants.VALUE;
 import static org.jirban.jira.impl.board.CustomFieldValue.UNSET_VALUE;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -57,6 +58,7 @@ import java.util.Set;
 import org.jboss.dmr.ModelNode;
 import org.jirban.jira.impl.BoardManagerBuilder;
 import org.jirban.jira.impl.JirbanIssueEvent;
+import org.jirban.jira.impl.JirbanRankEvent;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -1489,9 +1491,10 @@ public class BoardManagerTest extends AbstractBoardTest {
         getJsonCheckingViewIdAndUsers(0, "brian", "jason", "kabir");
 
         //Rank an issue to somewhere in the middle in main project and check board
-        issueRegistry.rerankIssue("TDP-1", "TDP-4");
         JirbanIssueEvent event = JirbanIssueEvent.createUpdateEvent("TDP-1", "TDP", null, null, null, null, null, null, null, true, null);
         boardManager.handleEvent(event);
+        JirbanRankEvent rankEvent = JirbanRankEvent.create(Collections.singletonList("TDP-1"), null, "TDP-4");
+        boardManager.handleRankEvent(rankEvent);
         ModelNode boardNode = getJsonCheckingViewIdAndUsers(1, "brian", "jason", "kabir");
         checkNoBlacklist(boardNode);
         checkComponents(boardNode);
@@ -1500,9 +1503,10 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkProjectRankedIssues(boardNode, "TBG", 1, 2, 3, 4);
 
         //Rank an issue to the start of the main project and check board
-        issueRegistry.rerankIssue("TDP-1", "TDP-2");
         event = JirbanIssueEvent.createUpdateEvent("TDP-1", "TDP", null, null, null, null, null, null, null, true, null);
         boardManager.handleEvent(event);
+        rankEvent = JirbanRankEvent.create(Collections.singletonList("TDP-1"), null, "TDP-2");
+        boardManager.handleRankEvent(rankEvent);
         boardNode = getJsonCheckingViewIdAndUsers(2, "brian", "jason", "kabir");
         checkNoBlacklist(boardNode);
         checkComponents(boardNode);
@@ -1511,9 +1515,10 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkProjectRankedIssues(boardNode, "TBG", 1, 2, 3, 4);
 
         //Rank an issue to the end of the main project and check board
-        issueRegistry.rerankIssue("TDP-1", null);
         event = JirbanIssueEvent.createUpdateEvent("TDP-1", "TDP", null, null, null, null, null, null, null, true, null);
         boardManager.handleEvent(event);
+        rankEvent = JirbanRankEvent.create(Collections.singletonList("TDP-1"), null, null);
+        boardManager.handleRankEvent(rankEvent);
         boardNode = getJsonCheckingViewIdAndUsers(3, "brian", "jason", "kabir");
         checkNoBlacklist(boardNode);
         checkComponents(boardNode);
@@ -1522,9 +1527,10 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkProjectRankedIssues(boardNode, "TBG", 1, 2, 3, 4);
 
         //Rank an issue in the other project and check board
-        issueRegistry.rerankIssue("TBG-2", "TBG-4");
         event = JirbanIssueEvent.createUpdateEvent("TBG-2", "TBG", null, null, null, null, null, null, null, true, null);
         boardManager.handleEvent(event);
+        rankEvent = JirbanRankEvent.create(Collections.singletonList("TBG-2"), null, "TBG-4");
+        boardManager.handleRankEvent(rankEvent);
         boardNode = getJsonCheckingViewIdAndUsers(4, "brian", "jason", "kabir");
         checkNoBlacklist(boardNode);
         checkComponents(boardNode);
@@ -1559,9 +1565,11 @@ public class BoardManagerTest extends AbstractBoardTest {
         getJsonCheckingViewIdAndUsers(0, "brian", "kabir");
 
         //Rank an issue to before a blacklisted issue and check board
-        issueRegistry.rerankIssue("TDP-1", "TDP-3");
+        //issueRegistry.rerankIssue("TDP-1", "TDP-3");
         JirbanIssueEvent event = JirbanIssueEvent.createUpdateEvent("TDP-1", "TDP", null, null, null, null, null, null, null, true, null);
         boardManager.handleEvent(event);
+        JirbanRankEvent rankEvent = JirbanRankEvent.create(Collections.singletonList("TDP-1"), null, "TDP-3");
+        boardManager.handleRankEvent(rankEvent);
         ModelNode boardNode = getJsonCheckingViewIdAndUsers(1, "brian", "kabir");
         checkBlacklist(boardNode, new String[]{"BAD"}, null, null, "TDP-3", "TDP-4");
         checkComponents(boardNode);

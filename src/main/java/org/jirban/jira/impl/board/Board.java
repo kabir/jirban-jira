@@ -482,6 +482,10 @@ public class Board {
 
         }
 
+        public Board getOriginal() {
+            return board;
+        }
+
         Board handleEvent(JirbanIssueEvent event) throws SearchException {
             switch (event.getType()) {
                 case DELETE:
@@ -510,9 +514,9 @@ public class Board {
                 Board boardCopy = new Board(board, board.boardConfig,
                         board.sortedAssignees,
                         board.sortedComponents,
-                        Collections.unmodifiableMap(allIssuesCopy),
+                        board.allIssues,
                         projectsCopy,
-                        SortedCustomFieldValues.Updater.merge(customFieldUpdaters, board.sortedCustomFieldValues),
+                        board.sortedCustomFieldValues,
                         blacklist.build());
                 boardCopy.updateBoardInProjects();
 

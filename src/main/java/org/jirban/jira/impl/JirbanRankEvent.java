@@ -71,13 +71,11 @@ public class JirbanRankEvent {
                 projectCode = getProjectCode(afterKey);
             }
         }
-        if (projectCode == null) {
-            JirbanLogger.LOGGER.warn("Currently it is not supported to mix projects when ranking {} {} {}", issues, afterKey, beforeKey);
-            return null;
-        }
-
         for (String key : issues) {
-            if (!projectCode.equals(getProjectCode(key))) {
+            String issueCode = getProjectCode(key);
+            if (projectCode == null) {
+                projectCode = issueCode;
+            } else  if (!projectCode.equals(issueCode)) {
                 JirbanLogger.LOGGER.warn("Currently it is not supported to mix projects when ranking {} {} {}", issues, afterKey, beforeKey);
                 return null;
             }
