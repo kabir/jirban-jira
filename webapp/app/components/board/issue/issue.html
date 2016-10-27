@@ -56,19 +56,16 @@
         </div>
     </div>
     <div class="clear-float"></div>
-    <div class="linked-issues" *ngFor="let linked of issue.linkedIssues"
-         title="{{getLinkedIssueTitle(linked)}}"
-         (mouseover)="showTitle($event, 'linked', linked)"
-         (mouseout)="hideTitles($event)"
-         [hidden]="!showLinkedIssues">
-        <div class="linked-issue">
-            <div class="linked-issue-summary">
-                <a href="{{jiraUrl}}/browse/{{linked.key}}" target="_blank"
-                   (contextmenu)="defaultContextMenu($event)" class="linked-issue-summary">{{linked.key}}</a>
-            </div>
-            <div class="linked-issue-status">
-                <span [style.color]="getLinkedIssueStatusColour(linked)">{{getLinkedIssueStatusFraction(linked)}}</span>
-            </div>
-        </div>
+    <div class="linked-issues">
+        <span class="linked-issues" *ngFor="let linked of issue.linkedIssues"
+             title="{{getLinkedIssueTitle(linked)}}"
+             (mouseover)="showTitle($event, 'linked', linked)"
+             (mouseout)="hideTitles($event)"
+             [hidden]="!showLinkedIssues">
+            <span class="linked-issue"><a href="{{jiraUrl}}/browse/{{linked.key}}" target="_blank"
+                       [style.color]="getLinkedIssueStatusColour(linked)"
+                       (contextmenu)="defaultContextMenu($event)" class="linked-issue">{{linked.key}}</a>
+            </span>
+        </span>
     </div>
 </li>

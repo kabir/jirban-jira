@@ -125,11 +125,6 @@ export class IssueComponent implements OnDestroy {
         return style;
     }
 
-    private getLinkedIssueStatusFraction(issue:LinkedIssueData) : string {
-        //This should only be called for linked projects
-        return issue.statusIndex + "/" + (issue.project.statesLength - 1);
-    }
-
     private getLinkedIssueStatusColour(issue:LinkedIssueData) : string {
         return this._progressColourService.getColour(issue.statusIndex, issue.project.statesLength);
     }
