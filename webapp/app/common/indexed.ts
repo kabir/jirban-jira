@@ -18,11 +18,13 @@ export class Indexed<T> {
             return;
         }
         let i = 0;
+        this._array = new Array<T>(input.length);
         for (let entry of input) {
             let value:T = factory(entry);
             let key:string = keyValue(value);
-            this._array.push(value);
-            this._indices[key] = i++;
+            this._array[i] = value;
+            this._indices[key] = i;
+            i++;
         }
     }
 
@@ -37,10 +39,12 @@ export class Indexed<T> {
             return;
         }
         let i = 0;
+        this._array = new Array<T>(Object.keys(input).length);
         for (let key in input) {
             let value:T = factory(key, input[key]);
-            this._array.push(value);
-            this._indices[key] = i++;
+            this._array[i] = value;
+            this._indices[key] = i;
+            i++;
         }
     }
 
@@ -82,19 +86,24 @@ export class Indexed<T> {
             deleteKeys[key] = true;
         }
 
-        let deleted:T[] = [];
-        let newArray:T[] = [];
+        let deleted:T[] = new Array<T>(keys.length);
+        let deletedLength:number = 0;
+        let newArray:T[] = new Array<T>(this._array.length);
+        let newArrayLength:number = 0;
         let newIndices:IMap<number> = {};
         let currentIndex:number = 0;
         for (let i:number = 0 ; i < this._array.length ; i++) {
             let key:string = indicesToKeys[i];
             if (deleteKeys[key]) {
-                deleted.push(this._array[i]);
+                deleted[deletedLength++] = this._array[i];
                 continue;
             }
-            newArray.push(this._array[i]);
+            newArray[newArrayLength++] = this._array[i];
             newIndices[key] = currentIndex++;
         }
+        newArray.length = newArrayLength;
+        deleted.length = deletedLength;
+
         this._array = newArray;
         this._indices = newIndices;
 
@@ -104,7 +113,7 @@ export class Indexed<T> {
     add(key:string, value:T) {
         if (!this._indices[key]) {
             let index = this.array.length;
-            this.array.push(value);
+            this.array[index] = value;
             this.indices[key] = index;
         }
     }

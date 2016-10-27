@@ -37,17 +37,18 @@ export class IssueComponent implements OnDestroy {
         this.unsubscribe();
 
         this._issue = issue;
-
-        this._filteredSubscription = this._issue.filteredObservable.subscribe(
-            done => {
-                this.changeVisibility();
-            }
-        );
-        this._issueDisplayDetailsSubscription = this.issue.boardData.issueDisplayDetailsObservable.subscribe(
-            done => {
-                this.changeVisibility();
-            }
-        );
+        if (this._issue) {
+            this._filteredSubscription = this._issue.filteredObservable.subscribe(
+                done => {
+                    this.changeVisibility();
+                }
+            );
+            this._issueDisplayDetailsSubscription = this.issue.boardData.issueDisplayDetailsObservable.subscribe(
+                done => {
+                    this.changeVisibility();
+                }
+            );
+        }
     }
 
 

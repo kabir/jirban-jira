@@ -5,12 +5,18 @@ import {IMap} from "../../common/map";
 import {SwimlaneData} from "./issueTable";
 import {CustomFieldValues, CustomFieldValue} from "./customField";
 import {Indexed} from "../../common/indexed";
+import {Priority} from "./priority";
+import {IssueType} from "./issueType";
+import {Assignee} from "./assignee";
+import {JiraComponent} from "./component";
+
+const INITIAL_ARRAY_SIZE = 8;
 
 export interface SwimlaneIndexer {
-    swimlaneTable : SwimlaneData[];
-    swimlaneIndex(issue:IssueData):number[];
     filter(swimlaneData:SwimlaneData):boolean;
     matchIssues(targetIssue:IssueData, issue:IssueData):boolean;
+    indexIssue(boardStateIndex: number, issue: IssueData):void;
+    createSwimlaneTable():SwimlaneData[];
 }
 
 export class SwimlaneMatcher {
@@ -64,14 +70,30 @@ export class SwimlaneIndexerFactory {
 }
 
 abstract class BaseIndexer {
-    protected _swimlaneTable:SwimlaneData[];
+    protected _swimlaneTable:SwimlaneEntry[];
+    protected abstract swimlaneIndex(issue:IssueData):number[];
+
     constructor(
         protected _filters:BoardFilters,
         protected _boardData:BoardData) {
     }
 
-    get swimlaneTable():SwimlaneData[] {
-        return this._swimlaneTable;
+    createSwimlaneTable():SwimlaneData[] {
+        let data:SwimlaneData[] = new Array<SwimlaneData>(this._swimlaneTable.length);
+        for (let i:number = 0 ; i < this._swimlaneTable.length ; i++) {
+            let entry:SwimlaneEntry = this._swimlaneTable[i];
+            data[i] = new SwimlaneData(entry.name, entry.index, entry.createTable());
+        }
+        return data;
+    }
+
+
+    indexIssue(boardStateIndex: number, issue: IssueData): void {
+        let swimlaneIndices:number[] = this.swimlaneIndex(issue);
+        for (let swimlaneIndex of swimlaneIndices) {
+            let targetSwimlane:SwimlaneEntry = this._swimlaneTable[swimlaneIndex];
+            targetSwimlane.addIssue(boardStateIndex, issue);
+        }
     }
 }
 
@@ -91,7 +113,7 @@ class ProjectSwimlaneIndexer extends BaseIndexer implements SwimlaneIndexer {
         }
     }
 
-    swimlaneIndex(issue:IssueData):number[] {
+    protected swimlaneIndex(issue:IssueData):number[] {
         return [this._indices[issue.projectCode]];
     }
 
@@ -105,22 +127,18 @@ class ProjectSwimlaneIndexer extends BaseIndexer implements SwimlaneIndexer {
 }
 
 class PrioritySwimlaneIndexer extends BaseIndexer implements SwimlaneIndexer {
-    private _swimlaneNames:string[] = [];
+    private _swimlaneNames:string[];
 
     constructor(filters:BoardFilters, boardData:BoardData, initTable:boolean) {
         super(filters, boardData);
         if (initTable) {
-            let i:number = 0;
-            for (let priority of boardData.priorities.array) {
-                this._swimlaneNames.push(priority.name)
-                i++;
-            }
-
+            this._swimlaneNames =
+                createNamesArray(boardData.priorities.array, (priority:Priority) => {return priority.name});
             this._swimlaneTable = createTable(boardData, this._swimlaneNames);
         }
     }
 
-    swimlaneIndex(issue:IssueData):number[] {
+    protected swimlaneIndex(issue:IssueData):number[] {
         return [this._boardData.priorities.indices[issue.priorityName]];
     }
 
@@ -134,20 +152,18 @@ class PrioritySwimlaneIndexer extends BaseIndexer implements SwimlaneIndexer {
 }
 
 class IssueTypeSwimlaneIndexer extends BaseIndexer implements SwimlaneIndexer {
-    private _swimlaneNames:string[] = [];
+    private _swimlaneNames:string[];
 
     constructor(filters:BoardFilters, boardData:BoardData, initTable:boolean) {
         super(filters, boardData);
         if (initTable) {
-            for (let issueType of boardData.issueTypes.array) {
-                this._swimlaneNames.push(issueType.name)
-            }
-
+            this._swimlaneNames =
+                createNamesArray(boardData.issueTypes.array, (issueType:IssueType) => {return issueType.name});
             this._swimlaneTable = createTable(boardData, this._swimlaneNames);
         }
     }
 
-    swimlaneIndex(issue:IssueData):number[] {
+    protected swimlaneIndex(issue:IssueData):number[] {
         return [this._boardData.issueTypes.indices[issue.typeName]];
     }
 
@@ -166,17 +182,13 @@ class AssigneeSwimlaneIndexer extends BaseIndexer implements SwimlaneIndexer {
     constructor(filters:BoardFilters, boardData:BoardData, initTable:boolean) {
         super(filters, boardData);
         if (initTable) {
-            for (let assignee of this._boardData.assignees.array) {
-                this._swimlaneNames.push(assignee.name);
-            }
-            //Add an additional entry for the no assignee case
-            this._swimlaneNames.push("None");
-
+            this._swimlaneNames =
+                createNamesArray(boardData.assignees.array, (assignee:Assignee) => {return assignee.name}, true);
             this._swimlaneTable = createTable(boardData, this._swimlaneNames);
         }
     }
 
-    swimlaneIndex(issue:IssueData):number[] {
+    protected swimlaneIndex(issue:IssueData):number[] {
         if (!issue.assignee) {
             return [this._swimlaneNames.length - 1];
         }
@@ -203,26 +215,19 @@ class AssigneeSwimlaneIndexer extends BaseIndexer implements SwimlaneIndexer {
 
 
 class ComponentSwimlaneIndexer extends BaseIndexer implements SwimlaneIndexer {
-    private _swimlaneNames:string[] = [];
+    private _swimlaneNames:string[];
 
     constructor(filters:BoardFilters, boardData:BoardData, initTable:boolean) {
         super(filters, boardData);
         if (initTable) {
-            for (let component of this._boardData.components.array) {
-                this._swimlaneNames.push(component.name);
-            }
-            //Add an additional entry for the no component case
-            this._swimlaneNames.push("None");
+            this._swimlaneNames =
+                createNamesArray(boardData.components.array, (component:JiraComponent) => {return component.name}, true);
 
             this._swimlaneTable = createTable(boardData, this._swimlaneNames);
         }
     }
 
-    get swimlaneTable():SwimlaneData[] {
-        return this._swimlaneTable;
-    }
-
-    swimlaneIndex(issue:IssueData):number[] {
+    protected swimlaneIndex(issue:IssueData):number[] {
         if (!issue.components) {
             return [this._swimlaneNames.length - 1];
         }
@@ -255,29 +260,21 @@ class ComponentSwimlaneIndexer extends BaseIndexer implements SwimlaneIndexer {
 class CustomFieldSwimlaneIndexer extends BaseIndexer implements SwimlaneIndexer {
     private _customFieldName:string;
     private _customFieldValues:Indexed<CustomFieldValue>;
-    private _swimlaneNames:string[] = [];
+    private _swimlaneNames:string[];
 
     constructor(filters:BoardFilters, boardData:BoardData, initTable:boolean, customFieldName:string, customFieldValues:Indexed<CustomFieldValue>) {
         super(filters, boardData);
         this._customFieldName = customFieldName;
         this._customFieldValues = customFieldValues;
         if (initTable) {
-            let i:number = 0;
-            for (let customFieldValue of customFieldValues.array) {
-                this._swimlaneNames.push(customFieldValue.displayValue);
-            }
-            //Add an additional entry for the no match case
-            this._swimlaneNames.push("None");
+            this._swimlaneNames =
+                createNamesArray(customFieldValues.array, (cfv:CustomFieldValue) => {return cfv.displayValue}, true);
 
             this._swimlaneTable = createTable(boardData, this._swimlaneNames);
         }
     }
 
-    get swimlaneTable():SwimlaneData[] {
-        return this._swimlaneTable;
-    }
-
-    swimlaneIndex(issue:IssueData):number[] {
+    protected swimlaneIndex(issue:IssueData):number[] {
         let customFieldValue:CustomFieldValue = issue.getCustomFieldValue(this._customFieldName);
         if (!customFieldValue) {
             //Put it into the 'None' bucket
@@ -309,11 +306,79 @@ class CustomFieldSwimlaneIndexer extends BaseIndexer implements SwimlaneIndexer 
     }
 }
 
-function createTable(boardData:BoardData, swimlaneNames:string[]) : SwimlaneData[] {
-    let swimlaneTable:SwimlaneData[] = [];
+class SwimlaneEntry {
+    private _boardData:BoardData
+    private _name:string;
+    private _issueTable:IssueData[][];
+    private _issueTableIndices:number[];
+
+    private _index:number;
+
+    constructor(private boardData:BoardData, name:string, index:number) {
+        this._boardData = boardData;
+        this._name = name;
+        this._index = index;
+        let states = boardData.boardStateNames.length;
+        this._issueTable = new Array<IssueData[]>(states);
+        this._issueTableIndices = new Array<number>(states);
+        for (let i:number = 0 ; i < states ; i++) {
+            this._issueTable[i] = new Array<IssueData>(INITIAL_ARRAY_SIZE);
+            this._issueTableIndices[i] = 0;
+        }
+    }
+
+    get name() {
+        return this._name;
+    }
+
+    get index() {
+        return this._index;
+    }
+
+    addIssue(boardStateIndex: number, issue: IssueData) {
+        let issues:IssueData[] = this._issueTable[boardStateIndex];
+        let index = this._issueTableIndices[boardStateIndex];
+        if (index >= issues.length) {
+            issues.length = issues.length * 2;
+        }
+        issues[index] = issue;
+        this._issueTableIndices[boardStateIndex] = ++index;
+    }
+
+    createTable():IssueData[][] {
+        for (let i:number = 0 ; i < this._issueTable.length ; i++) {
+            this._issueTable[i].length = this._issueTableIndices[i];
+        }
+        return this._issueTable;
+    }
+}
+
+function createNamesArray<T>(array:T[], getName:(entry:T)=>string, hasNone:boolean = false):string[]{
+    let result:string[] = new Array<string>(INITIAL_ARRAY_SIZE);
+
+    let i:number = 0;
+    for (let t of array) {
+        if (i >= result.length) {
+            result.length = result.length * 2;
+        }
+        result[i] = getName(t);
+        i++;
+    }
+    if (hasNone) {
+        result.length = i + 1;
+        result[i] = "None";
+    } else {
+        result.length = i;
+    }
+    return result;
+}
+
+function createTable(boardData:BoardData, swimlaneNames:string[]) : SwimlaneEntry[] {
+    let swimlaneTable:SwimlaneEntry[] = new Array<SwimlaneEntry>(swimlaneNames.length);
     let slIndex:number = 0;
+    let i:number = 0;
     for (let swimlaneName of swimlaneNames) {
-        swimlaneTable.push(new SwimlaneData(boardData, swimlaneName, slIndex++));
+        swimlaneTable[i++] = new SwimlaneEntry(boardData, swimlaneName, slIndex++);
     }
     return swimlaneTable;
 }
