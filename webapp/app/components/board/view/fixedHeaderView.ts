@@ -104,10 +104,20 @@ export abstract class FixedHeaderView implements OnInit {
         this._boardBodyHeight = boardBodyHeight + "px";
     }
 
+    private _scrollTimeout:any;
+    private _scrollTimeoutsSkipped:any = 0;
     scrollTableBodyX(event:Event) {
-        let boardLeftOffset:number = event.target["scrollLeft"] * -1;
-        this.boardLeftOffset = boardLeftOffset;
-        this.boardLeftOffsetPx = boardLeftOffset + "px";
+        if (this._scrollTimeout) {
+            console.log("clear");
+            clearTimeout(this._scrollTimeout);
+            this._scrollTimeout = null;
+        }
+        this._scrollTimeout = setTimeout(()=>{
+            console.log("redraw");
+            let boardLeftOffset:number = event.target["scrollLeft"] * -1;
+            this.boardLeftOffset = boardLeftOffset;
+            this.boardLeftOffsetPx = boardLeftOffset + "px";
+        }, 50);
     }
 
     protected onShowIssueContextMenu(event:IssueContextMenuData) {
