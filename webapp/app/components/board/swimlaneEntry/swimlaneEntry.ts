@@ -1,4 +1,4 @@
-import {Component, EventEmitter} from "@angular/core";
+import {Component, EventEmitter, ChangeDetectionStrategy} from "@angular/core";
 import {BoardData} from "../../../data/board/boardData";
 import {SwimlaneData} from "../../../data/board/issueTable";
 import {State, BoardHeaderEntry} from "../../../data/board/header";
@@ -16,7 +16,8 @@ import {ParallelTaskMenuData} from "../../../data/board/parallelTaskMenuData";
     outputs: ['showIssueContextMenu', 'toggleBacklogVisibility', 'showParallelTaskMenu'],
     selector: 'swimlane-entry',
     templateUrl: './swimlaneEntry.html',
-    styleUrls: ['../view/kanban/kanbanview.css', './swimlaneEntry.css']
+    styleUrls: ['../view/kanban/kanbanview.css', './swimlaneEntry.css'],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class SwimlaneEntryComponent {
     public swimlane : SwimlaneData;

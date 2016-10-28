@@ -70,6 +70,8 @@ export class BoardData {
     private _parallelTasks: Indexed<ParallelTask>;
 
     private _issueDisplayDetailsSubject:Subject<IssueDisplayDetails> = new Subject<IssueDisplayDetails>();
+
+    private _issueTableSubject:Subject<IssueTable> = new Subject<IssueTable>();
     /**
      * Called on loading the board the first time
      * @param input the json containing the issue tables
@@ -216,6 +218,7 @@ export class BoardData {
         } else {
             this._issueTable.fullRefresh(this._projects, input);
         }
+        this._issueTableSubject.next(this._issueTable);
     }
 
     toggleSwimlaneVisibility(swimlaneIndex:number) {
@@ -332,6 +335,7 @@ export class BoardData {
     set swimlane(swimlane:string) {
         this._swimlane = swimlane;
         this._issueTable.swimlane = swimlane;
+        this._issueTableSubject.next(this._issueTable);
     }
 
     get customFields():Indexed<CustomFieldValues> {
@@ -348,6 +352,10 @@ export class BoardData {
 
     get issueDisplayDetailsObservable(): Observable<IssueDisplayDetails> {
         return this._issueDisplayDetailsSubject;
+    }
+
+    get issueTableObservable(): Observable<IssueTable> {
+        return this._issueTableSubject;
     }
 
     getCustomFieldValueForIndex(name:string, index:number):CustomFieldValue {

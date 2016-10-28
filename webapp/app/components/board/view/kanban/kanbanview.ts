@@ -1,4 +1,4 @@
-import {Component} from "@angular/core";
+import {Component, ChangeDetectionStrategy, NgZone, ChangeDetectorRef} from "@angular/core";
 import {BoardData} from "../../../../data/board/boardData";
 import {ProgressErrorService} from "../../../../services/progressErrorService";
 import {AppHeaderService} from "../../../../services/appHeaderService";
@@ -13,7 +13,8 @@ import {IssuesService} from "../../../../services/issuesService";
     inputs: ["boardCode", "issuesService", "boardData"],
     outputs: ["showIssueContextMenu", "showParallelTaskMenu"],
     templateUrl: './kanbanview.html',
-    styleUrls: ['./kanbanview.css']
+    styleUrls: ['./kanbanview.css'],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class KanbanViewComponent extends FixedHeaderView {
 
@@ -21,7 +22,9 @@ export class KanbanViewComponent extends FixedHeaderView {
     private _collapsedColumnLabels:CharArrayRegistry = new CharArrayRegistry();
 
     constructor(_progressError:ProgressErrorService,
-                _appHeaderService:AppHeaderService) {
+                _appHeaderService:AppHeaderService,
+                private _changeDetector:ChangeDetectorRef,
+                private _zone:NgZone) {
         super(_progressError, _appHeaderService, "Kanban");
     }
 
@@ -35,6 +38,15 @@ export class KanbanViewComponent extends FixedHeaderView {
 
     set boardData(value:BoardData) {
         super.setBoardData(value);
+        value.issueTableObservable.subscribe(
+            done => {this.viewUpdated();}
+        );
+    }
+
+    private viewUpdated():void {
+        this._zone.run(()=>{
+            this._changeDetector.markForCheck();
+        });
     }
 
     get boardData():BoardData {
