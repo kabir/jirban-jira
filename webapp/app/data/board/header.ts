@@ -321,6 +321,14 @@ class StateCategory {
         return total;
     }
 
+    get visibleIssues():number {
+        let visible:number = 0;
+        for (let state of this._states) {
+            visible += state.visibleIssues;
+        }
+        return visible;
+    }
+
     get backlog():boolean {
         return this._backlog;
     }
@@ -377,6 +385,10 @@ export class State {
 
     get totalIssues():number {
         return this._boardData.totalIssuesByState[this._index];
+    }
+
+    get visibleIssues():number {
+        return this._boardData.visibleIssuesByState[this._index];
     }
 
     get index():number {
@@ -565,5 +577,28 @@ class StateHeaderEntry extends BoardHeaderEntry {
 
     get exceedWip():boolean {
         return this._state.exceedWip;
+    }
+}
+
+export class IssueCounts {
+    private readonly _total:number;
+    private readonly _visible:number;
+
+    constructor(total:number, visible:number) {
+        this._total = total;
+        this._visible = visible;
+    }
+
+    get total() : number {
+        return this._total;
+    }
+
+
+    get visible() : number {
+        return this._visible;
+    }
+
+    get hasFiltered() : boolean {
+        return this._visible != this._total;
     }
 }

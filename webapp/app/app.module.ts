@@ -23,6 +23,7 @@ import {LocationStrategy, HashLocationStrategy, APP_BASE_HREF} from "@angular/co
 import {ProgressColourService} from "./services/progressColourService";
 import {ParallelTaskMenuComponent} from "./components/board/parallelTaskMenu/parallelTaskMenu";
 import {FilterControlComponent} from "./components/board/controlPanel/filterControl/filterControl";
+import {KanbanViewHeaderComponent} from "./components/board/view/kanban/header/kanbanHeader";
 
 @NgModule({
     imports: [
@@ -45,6 +46,7 @@ import {FilterControlComponent} from "./components/board/controlPanel/filterCont
         IssueContextMenuComponent,
         FilterControlComponent,
         KanbanViewComponent,
+        KanbanViewHeaderComponent,
         PanelMenuComponent,
         ParallelTaskMenuComponent,
         RankViewComponent,

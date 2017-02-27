@@ -1,0 +1,82 @@
+<div id="table-header" [ngStyle]="{'left':boardLeftOffsetPx}">
+    <table id="header-table">
+        <thead>
+        <!--
+            We will have a colour coded banner and two levels of headers. The top level will
+            typically be the category, and the bottom level the states.
+
+            Note that states which do not belong to a category will appear in the top
+            row, with a rowspan of 2. Only these states will have a class in the top header since this class
+            sets the width of the columns depending on if it is visible or collapsed
+         -->
+        <tr>
+            <!-- The backlog header -->
+            <th *ngIf="backlogTopHeader"
+                [attr.colspan]="backlogTopHeader.visible ? backlogTopHeader.cols : 1"
+                [attr.rowspan]="backlogTopHeader.visible ? backlogTopHeader.rows : 2"
+                [ngStyle]="{'border-top-width': '2px', 'border-top-style': 'solid', 'border-top-color': 'grey'}"
+                [ngClass]="backlogTopHeader.visible ? 'visible backlog-cell' : 'collapsed backlog-cell'"
+                (click)="onToggleHeaderVisibility(backlogTopHeader)">
+                <div *ngIf="!backlogTopHeader.visible">&nbsp;</div>
+                <div *ngIf="backlogTopHeader.visible">
+                    <div>{{backlogTopHeader.name}}</div>
+                    <!-- Don't worry about wip here, since the server does not allow configuring wip for backlog states -->
+                    <div class="issue-count">{{backlogTopHeader.totalIssues}}</div>
+                </div>
+            </th>
+            <!-- The non-backlog headers -->
+            <!-- Some of these may be states with a rowspan of two, these may have help text -->
+            <th *ngFor="let header of topHeaders ; let headerIndex=index"
+                title="{{getPossibleStateHelp(header)}}"
+                [attr.colspan]="header.cols"
+                [attr.rowspan]="header.rows"
+                [ngStyle]="{'border-top-width': '2px', 'border-top-style': 'solid', 'border-top-color': getColourForIndex(headerIndex)}"
+                [ngClass]="header.stateAndCategory ? header.visible ? 'visible' : 'collapsed' : ''"
+                (click)="onToggleHeaderVisibility(header)">
+                <div *ngIf="header.visible">
+                    <div>{{header.name}}</div>
+                    <div class="issue-count" [style.color]="header.exceedWip ? '#FF0000' : ''"
+                    >{{header.totalIssues}}<span *ngIf="header.wip">/{{header.wip}}</span></div>
+                </div>
+                <div *ngIf="!header.visible" title="{{header.name}}">
+                    <div>{{getAbbreviatedHeader(header.name)}}</div>
+                    <div class="issue-count" [style.color]="header.exceedWip ? '#FF0000' : ''">{{header.totalIssues}}</div>
+                </div>
+            </th>
+        </tr>
+
+        <tr>
+            <!-- Only show the following bottom headers if the backlog is actually expanded -->
+            <th *ngFor="let header of backlogBottomHeadersIfVisible"
+                title="{{getStateHelp(header)}}"
+                [ngClass]="header.visible ? 'visible backlog-cell' : 'collapsed backlog-cell'"
+                (click)="onToggleHeaderVisibility(header)">
+                <div *ngIf="header.visible">
+                    <div>{{header.name}}</div>
+                    <!-- Don't worry about wip here, since the server does not allow configuring wip for backlog states -->
+                    <div>{{header.totalIssues}}</div>
+                </div>
+                <div *ngIf="!header.visible" [style.color]="header.exceedWip ? '#FF0000' : ''" title="{{header.name}}">
+                    <div>{{getAbbreviatedHeader(header.name)}}</div>
+                    <div class="issue-count" [style.color]="header.exceedWip ? '#FF0000' : ''">{{header.totalIssues}}</div>
+                </div>
+            </th>
+            <!-- The non-backlog headers -->
+            <th *ngFor="let header of bottomHeaders"
+                title="{{getStateHelp(header)}}"
+                [ngClass]="header.visible ? 'visible' : 'collapsed'"
+                (click)="onToggleHeaderVisibility(header)">
+                <div *ngIf="header.visible">
+                    <div>{{header.name}}</div>
+                    <div class="issue-count" [style.color]="header.visible && header.exceedWip ? '#FF0000' : ''"
+                    >{{header.totalIssues}}<span *ngIf="header.wip">/{{header.wip}}</span></div>
+                </div>
+                <div *ngIf="!header.visible" [style.color]="header.exceedWip ? '#FF0000' : ''" title="{{header.name}}">
+                    <div>{{getAbbreviatedHeader(header.name)}}</div>
+                    <div class="issue-count" [style.color]="header.exceedWip ? '#FF0000' : ''">{{header.totalIssues}}</div>
+                </div>
+            </th>
+        </tr>
+        </thead>
+    </table>
+</div>

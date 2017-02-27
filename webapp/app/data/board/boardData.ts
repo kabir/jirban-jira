@@ -295,6 +295,10 @@ export class BoardData {
         return this._issueTable.totalIssuesByState;
     }
 
+    get visibleIssuesByState() : number[] {
+        return this._issueTable.visibleIssuesByState;
+    }
+
     get assignees():Indexed<Assignee> {
         return this._assignees;
     }

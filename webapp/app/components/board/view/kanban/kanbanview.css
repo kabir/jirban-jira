@@ -37,31 +37,6 @@ table {
     border-collapse: collapse;
 }
 
-/* Board headers */
-#table-header {
-    position: relative;
-    width: 100%;
-}
-#header-table th {
-    margin: 0px;
-    padding: 0px;
-    border: 1px solid #CCCCCC;
-    border-collapse: collapse;
-    table-layout: fixed;
-    text-align: center;
-    vertical-align: middle;
-    font-size: 11px;
-    font-weight: bold;
-    height: 40px;
-    cursor: pointer;
-}
-#header-table th:hover {
-    background-color: #F0F0F0;
-}
-#header-table .issue-count {
-    font-size: 10px;
-    color: #666666;
-}
 
 /* Board body */
 #table-body {
@@ -80,11 +55,11 @@ table {
 }
 
 /** General column styling */
-th.visible, td.visible {
+td.visible {
     min-width: 200px;
     max-width: 200px;
 }
-th.collapsed,  td.collapsed {
+td.collapsed {
     min-width: 30px;
     max-width: 30px;
 }

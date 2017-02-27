@@ -7,6 +7,7 @@ import {BoardHeaderEntry} from "../../../data/board/header";
 import {IssueContextMenuData} from "../../../data/board/issueContextMenuData";
 import {ParallelTaskMenuData} from "../../../data/board/parallelTaskMenuData";
 import {AbbreviatedHeaderRegistry} from "../../../common/abbreviatedStateNameRegistry";
+import {IndexedColourUtil} from "../../../common/colourUtil";
 
 /**
  * Abstract base class for a board containing a fixed header.
@@ -85,21 +86,8 @@ export abstract class FixedHeaderView implements OnInit {
         return this._abbreviatedHeaderRegistry.getAbbreviatedHeader(state);
     }
 
-
     getColourForIndex(index:number) : string {
-        let mod:number = index % 5;
-        switch (mod) {
-            case 0:
-                return "red";
-            case 1:
-                return "orange";
-            case 2:
-                return "green";
-            case 3:
-                return "blue";
-            case 4:
-                return "violet";
-        }
+        return IndexedColourUtil.forIndex(index);
     }
 
     private onResize(event : any) {

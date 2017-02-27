@@ -13,6 +13,7 @@ export class IssueTable {
     private _allIssues:Indexed<IssueData>;
     private _issueTable:IssueData[][];
     private _swimlaneTable:SwimlaneData[];
+    private _visibleIssuesByState:number[];
     private _totalIssuesByState:number[];
     private _rankedIssues:IssueData[] = [];
 
@@ -54,6 +55,10 @@ export class IssueTable {
 
     get totalIssuesByState() : number[] {
         return this._totalIssuesByState;
+    }
+
+    get visibleIssuesByState() : number [] {
+        return this._visibleIssuesByState;
     }
 
     set filters(filters:BoardFilters) {
@@ -208,6 +213,7 @@ export class IssueTable {
         let numStates = this._boardData.boardStateNames.length;
 
         this._totalIssuesByState = new Array<number>(numStates);
+        this._visibleIssuesByState = new Array<number>(numStates);
         this._rankedIssues = [];
 
         let issueCounters = new Array<StateIssueCounter>(numStates);
@@ -228,9 +234,12 @@ export class IssueTable {
                 issuesForState.push(issue);
 
                 let issueCounter:StateIssueCounter = issueCounters[boardStateIndex];
-                issueCounter.increment();
+                issueCounter.incrementTotal();
                 if (filterIssues) {
                     issue.filterIssue(this._filters);
+                    if (issue.filtered) {
+                        issueCounter.incrementFiltered();
+                    }
                 }
 
                 this._rankedIssues.push(issue);
@@ -238,7 +247,8 @@ export class IssueTable {
         }
 
         for (let stateIndex:number = 0 ; stateIndex < numStates ; stateIndex++) {
-            this._totalIssuesByState[stateIndex] = issueCounters[stateIndex].count;
+            this._totalIssuesByState[stateIndex] = issueCounters[stateIndex].totalCount;
+            this._visibleIssuesByState[stateIndex] = issueCounters[stateIndex].visibleCount;
         }
 
         return issueTable;
@@ -248,6 +258,7 @@ export class IssueTable {
         let numStates = this._boardData.boardStateNames.length;
 
         this._totalIssuesByState = new Array<number>(numStates);
+        this._visibleIssuesByState = new Array<number>(numStates);
         this._rankedIssues = [];
 
         let indexer:SwimlaneIndexer = this.createSwimlaneIndexer();
@@ -273,9 +284,12 @@ export class IssueTable {
                 }
 
                 let issueCounter:StateIssueCounter = issueCounters[boardStateIndex];
-                issueCounter.increment();
+                issueCounter.incrementTotal();
                 if (filterIssues) {
                     issue.filterIssue(this._filters);
+                    if (issue.filtered) {
+                        issueCounter.incrementFiltered();
+                    }
                 }
 
                 this._rankedIssues.push(issue);
@@ -283,7 +297,8 @@ export class IssueTable {
         }
 
         for (let stateIndex:number = 0 ; stateIndex < numStates ; stateIndex++) {
-            this._totalIssuesByState[stateIndex] = issueCounters[stateIndex].count;
+            this._totalIssuesByState[stateIndex] = issueCounters[stateIndex].totalCount;
+            this._visibleIssuesByState[stateIndex] = issueCounters[stateIndex].visibleCount;
         }
 
         //Create the tables and Apply the filters to the swimlanes
@@ -373,13 +388,23 @@ export class IssueTable {
 }
 
 class StateIssueCounter {
-    private _count:number = 0;
+    private _totalCount:number = 0;
+    private _visibleCount:number = 0;
 
-    increment() {
-        this._count++;
+    incrementTotal() {
+        this._totalCount++;
+        this._visibleCount++;
     }
 
-    get count():number {
-        return this._count;
+    incrementFiltered() {
+        this._visibleCount--;
+    }
+
+    get totalCount():number {
+        return this._totalCount;
+    }
+
+    get visibleCount(): number {
+        return this._visibleCount;
     }
 }
