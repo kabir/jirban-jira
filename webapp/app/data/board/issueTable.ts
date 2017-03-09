@@ -64,9 +64,27 @@ export class IssueTable {
     set filters(filters:BoardFilters) {
         this._filters = filters;
 
-        for (let issue of this._allIssues.array) {
-            issue.filterIssue(this._filters);
+        if (this._swimlane) {
+            //TODO
+
+        } else {
+            let visibleIssuesByState: number[] = new Array<number>(this._issueTable.length).fill(0);
+            for (let i:number = 0 ; i < this._issueTable.length ; i++) {
+                let issuesForState:IssueData[] = this._issueTable[i];
+                for (let j:number = 0 ; j < issuesForState.length ; j++) {
+                    let issue:IssueData = issuesForState[j];
+                    issue.filterIssue(this._filters);
+                    if (!issue.filtered) {
+                        visibleIssuesByState[i] = visibleIssuesByState[i] + 1;
+                    }
+                }
+            }
+            this._visibleIssuesByState = visibleIssuesByState;
         }
+
+        // for (let issue of this._allIssues.array) {
+        //     issue.filterIssue(this._filters);
+        // }
 
         if (this._swimlane) {
             let indexer:SwimlaneIndexer = this.createSwimlaneIndexer();
@@ -384,7 +402,6 @@ export class IssueTable {
             }
         }
     }
-
 }
 
 class StateIssueCounter {

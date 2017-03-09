@@ -395,8 +395,10 @@ export class BoardData {
     }
 
     set swimlane(swimlane:string) {
-        this._swimlane = swimlane;
-        this._issueTable.swimlane = swimlane;
+        if (swimlane != this._swimlane) {
+            this._swimlane = swimlane;
+            this._issueTable.swimlane = swimlane;
+        }
     }
 
     get customFields():Indexed<CustomFieldValues> {
@@ -511,6 +513,14 @@ export class BoardData {
 
     setFiltersFromQueryParams(queryParams:IMap<string>) {
 
+        if (queryParams["swimlane"]) {
+            //Use the setter so that we recalculate everything
+            this.swimlane = queryParams["swimlane"];
+        } else {
+            this.swimlane = null;
+        }
+
+
         this._boardFilters.createFromQueryParams(this, queryParams,
             (projectFilter:any,
              priorityFilter:any,
@@ -527,13 +537,8 @@ export class BoardData {
 
         this.updateIssueDisplayDetails(this.parseIssueDisplayDetails(queryParams));
 
-        if (queryParams["swimlane"]) {
-            //Use the setter so that we recalculate everything
-            this.swimlane = queryParams["swimlane"];
-
+        if (this._swimlane) {
             this._issueTable.setSwimlaneVisibilitiesFromQueryParams(queryParams);
-        } else {
-            this.swimlane = null;
         }
 
         if (!!queryParams["showEmptySl"]) {

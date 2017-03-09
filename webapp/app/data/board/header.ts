@@ -411,9 +411,6 @@ export class State {
         if (!this._wip) {
             return false;
         }
-        if (this.totalIssues > this._wip) {
-            console.log("Exceeded wip for " + this._name);
-        }
         return this.totalIssues > this._wip;
     }
 
@@ -460,6 +457,15 @@ export abstract class BoardHeaderEntry {
         throw new Error("nyi");
     }
 
+    get visibleIssues():number {
+        //Abstract getters don't exist :(
+        throw new Error("nyi");
+    }
+
+    get hiddenIssues():boolean {
+        return this.totalIssues != this.visibleIssues;
+    }
+
     get visible():boolean {
         //Abstract getters don't exist :(
         throw new Error("nyi");
@@ -501,6 +507,10 @@ class CategoryHeaderEntry extends BoardHeaderEntry {
 
     get totalIssues() : number {
         return this._category.totalIssues;
+    }
+
+    get visibleIssues() :number {
+        return this._category.visibleIssues;
     }
 
     get stateAndCategory():boolean {
@@ -548,6 +558,10 @@ class StateHeaderEntry extends BoardHeaderEntry {
 
     get totalIssues() : number {
         return this._state.totalIssues;
+    }
+
+    get visibleIssues() : number {
+        return this._state.visibleIssues;
     }
 
     get stateAndCategory():boolean {

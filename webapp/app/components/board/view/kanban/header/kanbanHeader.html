@@ -21,7 +21,10 @@
                 <div *ngIf="backlogTopHeader.visible">
                     <div>{{backlogTopHeader.name}}</div>
                     <!-- Don't worry about wip here, since the server does not allow configuring wip for backlog states -->
-                    <div class="issue-count">{{backlogTopHeader.totalIssues}}</div>
+                    <div class="issue-count">
+                        <span *ngIf="!backlogTopHeader.hiddenIssues">{{backlogTopHeader.totalIssues}}</span>
+                        <span *ngIf="backlogTopHeader.hiddenIssues" title="Total: {{backlogTopHeader.totalIssues}}"><u>{{backlogTopHeader.visibleIssues}}</u></span>
+                    </div>
                 </div>
             </th>
             <!-- The non-backlog headers -->
@@ -35,12 +38,19 @@
                 (click)="onToggleHeaderVisibility(header)">
                 <div *ngIf="header.visible">
                     <div>{{header.name}}</div>
-                    <div class="issue-count" [style.color]="header.exceedWip ? '#FF0000' : ''"
-                    >{{header.totalIssues}}<span *ngIf="header.wip">/{{header.wip}}</span></div>
+                    <div class="issue-count" [style.color]="header.exceedWip ? '#FF0000' : ''">
+                        <span *ngIf="!header.hiddenIssues">{{header.totalIssues}}</span>
+                        <span *ngIf="header.hiddenIssues" title="Total: {{header.totalIssues}}"><u>{{header.visibleIssues}}</u></span>
+                        <span *ngIf="header.wip">/{{header.wip}}</span>
+                    </div>
                 </div>
                 <div *ngIf="!header.visible" title="{{header.name}}">
                     <div>{{getAbbreviatedHeader(header.name)}}</div>
-                    <div class="issue-count" [style.color]="header.exceedWip ? '#FF0000' : ''">{{header.totalIssues}}</div>
+                    <div class="issue-count"
+                         [style.color]="header.exceedWip ? '#FF0000' : ''">
+                        <span *ngIf="!header.hiddenIssues">{{header.totalIssues}}</span>
+                        <span *ngIf="header.hiddenIssues" title="Total: {{header.totalIssues}}"><u>{{header.visibleIssues}}</u></span>
+                    </div>
                 </div>
             </th>
         </tr>
@@ -54,11 +64,17 @@
                 <div *ngIf="header.visible">
                     <div>{{header.name}}</div>
                     <!-- Don't worry about wip here, since the server does not allow configuring wip for backlog states -->
-                    <div>{{header.totalIssues}}</div>
+                    <div>
+                        <span *ngIf="!header.hiddenIssues">{{header.totalIssues}}</span>
+                        <span *ngIf="header.hiddenIssues" title="Total: {{header.totalIssues}}"><u>{{header.visibleIssues}}</u></span>
+                    </div>
                 </div>
                 <div *ngIf="!header.visible" [style.color]="header.exceedWip ? '#FF0000' : ''" title="{{header.name}}">
                     <div>{{getAbbreviatedHeader(header.name)}}</div>
-                    <div class="issue-count" [style.color]="header.exceedWip ? '#FF0000' : ''">{{header.totalIssues}}</div>
+                    <div class="issue-count" [style.color]="header.exceedWip ? '#FF0000' : ''">
+                        <span *ngIf="!header.hiddenIssues">{{header.totalIssues}}</span>
+                        <span *ngIf="header.hiddenIssues" title="Total: {{header.totalIssues}}"><u>{{header.visibleIssues}}</u></span>
+                    </div>
                 </div>
             </th>
             <!-- The non-backlog headers -->
@@ -68,12 +84,18 @@
                 (click)="onToggleHeaderVisibility(header)">
                 <div *ngIf="header.visible">
                     <div>{{header.name}}</div>
-                    <div class="issue-count" [style.color]="header.visible && header.exceedWip ? '#FF0000' : ''"
-                    >{{header.totalIssues}}<span *ngIf="header.wip">/{{header.wip}}</span></div>
+                    <div class="issue-count"
+                         [style.color]="header.visible && header.exceedWip ? '#FF0000' : ''">
+                        <span *ngIf="!header.hiddenIssues">{{header.totalIssues}}</span>
+                        <span *ngIf="header.hiddenIssues" title="Total: {{header.totalIssues}}"><u>{{header.visibleIssues}}</u></span>
+                        <span *ngIf="header.wip">/{{header.wip}}</span></div>
                 </div>
                 <div *ngIf="!header.visible" [style.color]="header.exceedWip ? '#FF0000' : ''" title="{{header.name}}">
                     <div>{{getAbbreviatedHeader(header.name)}}</div>
-                    <div class="issue-count" [style.color]="header.exceedWip ? '#FF0000' : ''">{{header.totalIssues}}</div>
+                    <div class="issue-count" [style.color]="header.exceedWip ? '#FF0000' : ''">
+                        <span *ngIf="!header.hiddenIssues">{{header.totalIssues}}</span>
+                        <span *ngIf="header.hiddenIssues" title="Total: {{header.totalIssues}}"><u>{{header.visibleIssues}}</u></span>
+                    </div>
                 </div>
             </th>
         </tr>
