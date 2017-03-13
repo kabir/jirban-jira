@@ -115,9 +115,6 @@ export class IssueContextMenuComponent implements Hideable {
         event.preventDefault();
         this.toState = toState;
 
-        let beforeKey:string;;
-        let afterKey:string;
-
         //Tell the server to move the issue. The actual move will come in via the board's polling mechanism.
         this._progressError.startProgress(true);
         this._issuesService.moveIssue(this._boardData, this.issue, this.toState)

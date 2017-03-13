@@ -18,7 +18,6 @@
 
     <kanban-view *ngIf="view === 'kbv'"
             [boardCode]="boardCode"
-            [issuesService]="issuesService"
             [boardData]="boardData"
             [abbreviatedHeaderRegistry]="abbreviatedHeaderRegistry"
             (showIssueContextMenu)="onShowIssueContextMenu($event)"
@@ -26,7 +25,6 @@
     </kanban-view>
     <rank-view *ngIf="view === 'rv'"
             [boardCode]="boardCode"
-            [issuesService]="issuesService"
             [boardData]="boardData"
             [abbreviatedHeaderRegistry]="abbreviatedHeaderRegistry"
             (showIssueContextMenu)="onShowIssueContextMenu($event)"

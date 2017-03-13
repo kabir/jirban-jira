@@ -19,12 +19,8 @@ export class RankViewComponent extends FixedHeaderView {
 
     private _mainStates:State[];
 
-    constructor(_appHeaderService:AppHeaderService) {
-        super(_appHeaderService, "Rank");
-    }
-
-    set issuesService(value:IssuesService) {
-        super.setIssuesService(value);
+    constructor(_appHeaderService:AppHeaderService, issuesService:IssuesService) {
+        super(_appHeaderService, issuesService, "Rank");
     }
 
     set boardCode(value:string) {

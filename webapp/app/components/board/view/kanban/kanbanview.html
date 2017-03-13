@@ -130,7 +130,9 @@
                         <!-- Normal states -->
                         <td *ngFor="let state of mainStates"
                             [ngClass]="visibleColumns[state.index] == true ? 'visible' : 'collapsed'"
-                            title="State: {{state.name}}">
+                            title="State: {{state.name}}"
+                            (dragover)="onDragOver($event, state.name)"
+                            (drop)="onDrop($event, state.name)">
                             <div *ngIf="visibleColumns[state.index]">
                                 <ul class="issues-list">
                                     <issue *ngFor="let issue of boardData.issueTable[state.index]"

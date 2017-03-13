@@ -31,16 +31,14 @@ export abstract class FixedHeaderView implements OnInit {
 
 
     constructor(private _appHeaderService:AppHeaderService,
+                issuesService:IssuesService,
                 private _titlePrefix:string) {
+        this._issuesService = issuesService;
     }
 
     ngOnInit():any {
         this._appHeaderService.disableBodyScrollbars = true;
         this._appHeaderService.setTitle(this._titlePrefix + " (" + this._boardCode + ")");
-    }
-
-    protected setIssuesService(value:IssuesService) {
-        this._issuesService = value;
     }
 
     protected setBoardCode(value:string) {

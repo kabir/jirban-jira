@@ -255,4 +255,10 @@ export class IssueComponent implements OnDestroy {
         }
         return null;
     }
+
+    private onDragStart(event:DragEvent, issueKey:string) {
+        console.log(issueKey + ": " + event);
+        event.dataTransfer.setData("issue-key", issueKey);
+    }
+
 }

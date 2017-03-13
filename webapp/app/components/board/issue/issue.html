@@ -15,15 +15,18 @@
   -->
 
 <li class="issue"
+    draggable="true"
     (contextmenu)="triggerShowIssueContextMenu($event, issue.key)"
     title="{{issueTitle}}"
     (mouseover)="showTitle($event, 'issue')"
     (mouseout)="hideTitles($event)"
-    *ngIf="!issue.filtered">
+    *ngIf="!issue.filtered"
+    (dragstart)="onDragStart($event, issue.key)">
     <div class="header" [style.background-color]="issue.colour">
         <div class="summary">
             <span><a href="{{jiraUrl}}/browse/{{issue.key}}" target="_blank"
-                     (contextmenu)="defaultContextMenu($event)" class="header">{{issue.key}}</a></span>
+                     (contextmenu)="defaultContextMenu($event)" class="header"
+                     draggable="false">{{issue.key}}</a></span>
         </div>
         <div class="assignee">
             <span title="{{issue.assigneeName}}">{{issue.assigneeInitials}}</span>
@@ -34,9 +37,11 @@
         <div *ngIf="showAssignee">
             <!-- Work around the image url not getting replaced in issueData.ts -->
             <img class="avatar" *ngIf="issue.assigneeAvatar"
-                 title="{{issue.assigneeName}}" src="{{issue.assigneeAvatar}}" width="22px" height="26px"/>
+                 title="{{issue.assigneeName}}" src="{{issue.assigneeAvatar}}" width="22px" height="26px"
+                    draggable="false"/>
             <img class="avatar" *ngIf="!issue.assigneeAvatar"
-                 title="{{issue.assigneeName}}" src="../../../../images/person-4x.png" width="22px" height="26px"/>
+                 title="{{issue.assigneeName}}" src="../../../../images/person-4x.png" width="22px" height="26px"
+                    draggable="false"/>
 
         </div>
         <div [ngClass]="showAssignee ? 'summary-full' : 'summary-short'">{{issue.summary}}</div>

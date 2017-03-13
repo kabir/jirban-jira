@@ -6,6 +6,8 @@ import {CharArrayRegistry} from "../../../../common/charArrayRegistry";
 import {FixedHeaderView} from "../fixedHeaderView";
 import {IssuesService} from "../../../../services/issuesService";
 import {AbbreviatedHeaderRegistry} from "../../../../common/abbreviatedStateNameRegistry";
+import {ProgressErrorService} from "../../../../services/progressErrorService";
+import {IssueData} from "../../../../data/board/issueData";
 
 
 @Component({
@@ -20,12 +22,10 @@ export class KanbanViewComponent extends FixedHeaderView {
     /** Cache all the char arrays used for the collapsed column labels so they are not recalculated all the time */
     private _collapsedColumnLabels:CharArrayRegistry = new CharArrayRegistry();
 
-    constructor(_appHeaderService:AppHeaderService) {
-        super(_appHeaderService, "Kanban");
-    }
-
-    set issuesService(value:IssuesService) {
-        super.setIssuesService(value);
+    constructor(appHeaderService:AppHeaderService,
+                issuesService:IssuesService,
+                private _progressError:ProgressErrorService) {
+        super(appHeaderService, issuesService, "Kanban");
     }
 
     set boardCode(value:string) {
@@ -110,6 +110,36 @@ export class KanbanViewComponent extends FixedHeaderView {
         return '';
     }
 
+    private onDragOver(event:DragEvent, state:string) {
+        event.preventDefault();
+    }
+
+    private onDrop(event:DragEvent, toState:string) {
+        if (!event.dataTransfer) {
+            return;
+        }
+        let key:string = event.dataTransfer.getData("issue-key");
+        if (!key) {
+            return;
+        }
+        let issue:IssueData = this._boardData.getIssue(key);
+
+        //Tell the server to move the issue. The actual move will come in via the board's polling mechanism.
+        this._progressError.startProgress(true);
+        this._issuesService.moveIssue(this._boardData, issue, toState)
+            .subscribe(
+                data => {},
+                error => {
+                    this._progressError.setError(error);
+                },
+                () => {
+                    let status:string = "<a " +
+                        "class='toolbar-message' href='" + this._boardData.jiraUrl + "/browse/" + issue.key + "'>" +
+                        issue.key + "</a> moved to '" + toState + "'";
+                    this._progressError.finishProgress(status);
+                }
+            );
+    }
 }
 
 

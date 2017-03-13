@@ -399,9 +399,6 @@ export class State {
         if (!this._wip) {
             return false;
         }
-        if (this.totalIssues > this._wip) {
-            console.log("Exceeded wip for " + this._name);
-        }
         return this.totalIssues > this._wip;
     }
 
