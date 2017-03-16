@@ -22,6 +22,9 @@ export class KanbanViewComponent extends FixedHeaderView {
     /** Cache all the char arrays used for the collapsed column labels so they are not recalculated all the time */
     private _collapsedColumnLabels:CharArrayRegistry = new CharArrayRegistry();
 
+    private _dragState:string;
+    private _dragStyle:any;
+
     constructor(appHeaderService:AppHeaderService,
                 issuesService:IssuesService,
                 private _progressError:ProgressErrorService) {
@@ -110,9 +113,30 @@ export class KanbanViewComponent extends FixedHeaderView {
         return '';
     }
 
+    private getDragStyle(state:string):any {
+        if (this._dragState == state) {
+            console.log("Returning " + this._dragStyle);
+            return this._dragStyle;
+        }
+        return null;
+    }
+
     private onDragOver(event:DragEvent, state:string) {
+        // From https://www.w3schools.com/jsref/event_ondragover.asp
+        // By default, data/elements cannot be dropped in other elements. To allow a drop, we must prevent the default handling of the element
         event.preventDefault();
     }
+
+    private onDragEnter(event:DragEvent, toState:string) {
+        this._dragState = toState;
+        this._dragStyle = {"background-color": "pink"};
+    }
+
+    private onDragLeave(event:DragEvent, toState:string) {
+        this._dragState = null;
+        this._dragStyle = null;
+    }
+
 
     private onDrop(event:DragEvent, toState:string) {
         if (!event.dataTransfer) {
@@ -131,15 +155,20 @@ export class KanbanViewComponent extends FixedHeaderView {
                 data => {},
                 error => {
                     this._progressError.setError(error);
+                    this._dragState = null;
+                    this._dragStyle = null;
                 },
                 () => {
                     let status:string = "<a " +
                         "class='toolbar-message' href='" + this._boardData.jiraUrl + "/browse/" + issue.key + "'>" +
                         issue.key + "</a> moved to '" + toState + "'";
                     this._progressError.finishProgress(status);
+                    this._dragState = null;
+                    this._dragStyle = null;
                 }
             );
     }
+
 }
 
 

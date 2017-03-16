@@ -114,7 +114,9 @@
                         <!-- Backlog visible, show all the possible backlog states -->
                         <td *ngFor="let state of backlogStatesIfVisible"
                             [ngClass]="visibleColumns[state.index] == true ? 'visible backlog-cell' : 'collapsed backlog-cell'"
-                            title="State: {{state.name}}">
+                            title="State: {{state.name}}"
+                            (dragover)="onDragOver($event, state.name)"
+                            (drop)="onDrop($event, state.name)">
                             <div *ngIf="visibleColumns[state.index]">
                                 <ul class="issues-list">
                                     <issue *ngFor="let issue of boardData.issueTable[state.index]"
@@ -131,7 +133,10 @@
                         <td *ngFor="let state of mainStates"
                             [ngClass]="visibleColumns[state.index] == true ? 'visible' : 'collapsed'"
                             title="State: {{state.name}}"
+                            [ngStyle]="getDragStyle(state.name)"
+                            (dragenter)="onDragEnter($event, state.name)"
                             (dragover)="onDragOver($event, state.name)"
+                            (dragleave)="onDragLeave($event, state.name)"
                             (drop)="onDrop($event, state.name)">
                             <div *ngIf="visibleColumns[state.index]">
                                 <ul class="issues-list">
