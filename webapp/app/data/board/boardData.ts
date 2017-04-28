@@ -265,9 +265,9 @@ export class BoardData {
         this._parallelTasks = new ParallelTaskDeserializer().deserialize(input, this._projects);
 
         if (first) {
-            this._issueTable = new IssueTable(this, this._projects, this._boardFilters, this._swimlane, input);
+            this._issueTable = new IssueTable(this, input);
         } else {
-            this._issueTable.fullRefresh(this._projects, input);
+            this._issueTable.fullRefresh(input);
         }
     }
 
@@ -397,7 +397,7 @@ export class BoardData {
     set swimlane(swimlane:string) {
         if (swimlane != this._swimlane) {
             this._swimlane = swimlane;
-            this._issueTable.swimlane = swimlane;
+            this._issueTable.swimlaneUpdated();
         }
     }
 
@@ -464,7 +464,7 @@ export class BoardData {
             customFieldValueFilters, this._customFields,
             parallelTaskFilters, this._parallelTasks);
 
-        this._issueTable.filters = this._boardFilters;
+        this._issueTable.filtersUpdated();
     }
 
     get filters():BoardFilters {
@@ -596,6 +596,10 @@ export class BoardData {
 
     canRank(projectCode:string):boolean {
         return this._projects.canRank(projectCode);
+    }
+
+    deleteIssues(deletedIssues: IssueData[]) {
+        this._projects.deleteIssues(deletedIssues);
     }
 }
 

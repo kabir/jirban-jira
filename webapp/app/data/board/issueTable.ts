@@ -1,8 +1,7 @@
-import {Projects, BoardProject} from "./project";
+import {BoardProject} from "./project";
 import {BoardData} from "./boardData";
 import {IssueData} from "./issueData";
 import {IMap} from "../../common/map";
-import {BoardFilters} from "./boardFilters";
 import {SwimlaneIndexer, SwimlaneIndexerFactory} from "./swimlaneIndexer";
 import {Indexed} from "../../common/indexed";
 import {ChangeSet, RankChange} from "./change";
@@ -29,9 +28,6 @@ export class IssueTable {
      */
     constructor(
                 private _boardData:BoardData,
-                private _projects:Projects,
-                private _filters:BoardFilters,
-                private _swimlane:string,
                 input:any) {
         this.internalFullRefresh(input, true);
     }
@@ -40,8 +36,7 @@ export class IssueTable {
      * Called when we receive the full table over the web socket
      * @param input
      */
-    fullRefresh(projects:Projects, input:any) {
-        this._projects = projects;
+    fullRefresh(input:any) {
         this.internalFullRefresh(input, false);
     }
 
@@ -61,41 +56,42 @@ export class IssueTable {
         return this._visibleIssuesByState;
     }
 
-    set filters(filters:BoardFilters) {
-        this._filters = filters;
+    filtersUpdated() {
+        let visibleIssuesByState: number[] = new Array<number>(this._visibleIssuesByState.length).fill(0);
 
-        if (this._swimlane) {
-            //TODO
-
-        } else {
-            let visibleIssuesByState: number[] = new Array<number>(this._issueTable.length).fill(0);
-            for (let i:number = 0 ; i < this._issueTable.length ; i++) {
-                let issuesForState:IssueData[] = this._issueTable[i];
-                for (let j:number = 0 ; j < issuesForState.length ; j++) {
-                    let issue:IssueData = issuesForState[j];
-                    issue.filterIssue(this._filters);
-                    if (!issue.filtered) {
-                        visibleIssuesByState[i] = visibleIssuesByState[i] + 1;
-                    }
-                }
-            }
-            this._visibleIssuesByState = visibleIssuesByState;
-        }
-
-        // for (let issue of this._allIssues.array) {
-        //     issue.filterIssue(this._filters);
-        // }
-
-        if (this._swimlane) {
+        if (this._boardData.swimlane) {
             let indexer:SwimlaneIndexer = this.createSwimlaneIndexer();
             for (let swimlaneData of this._swimlaneTable) {
                 swimlaneData.filtered = indexer.filter(swimlaneData);
+                if (swimlaneData.filtered) {
+                    continue;
+                }
+                swimlaneData.filtered = !this.populateVisibleCounts(swimlaneData.issueTable, visibleIssuesByState);
             }
+        } else {
+            this.populateVisibleCounts(this._issueTable, visibleIssuesByState);
         }
+
+        this._visibleIssuesByState = visibleIssuesByState;
     }
 
-    set swimlane(swimlane:string) {
-        this._swimlane = swimlane;
+    private populateVisibleCounts(issueTable:IssueData[][], visibleIssuesByState: number[]):boolean {
+        let hasVisibleIssues:boolean = false;
+        for (let i:number = 0 ; i < issueTable.length ; i++) {
+            let issuesForState:IssueData[] = issueTable[i];
+            for (let j:number = 0 ; j < issuesForState.length ; j++) {
+                let issue:IssueData = issuesForState[j];
+                issue.filterIssue(this._boardData.filters);
+                if (!issue.filtered) {
+                    visibleIssuesByState[i] = visibleIssuesByState[i] + 1;
+                    hasVisibleIssues = true;
+                }
+            }
+        }
+        return hasVisibleIssues;
+    }
+
+    swimlaneUpdated() {
         this.createTable(false);
         this._swimlaneVisibitilySubject.next(null);
     }
@@ -137,7 +133,7 @@ export class IssueTable {
 
         //Delete all the deleted issues from the project issue tables
         //This also includes all the issues that have been moved
-        this._projects.deleteIssues(deletedIssues);
+        this._boardData.deleteIssues(deletedIssues);
 
 
 
@@ -151,7 +147,7 @@ export class IssueTable {
                     continue;
                 }
                 let newIssue:IssueData = issue.applyUpdate(update);
-                newIssue.filterIssue(this._filters);
+                newIssue.filterIssue(this._boardData.filters);
                 this._allIssues.array[issueIndex] = newIssue;
             }
         }
@@ -160,7 +156,7 @@ export class IssueTable {
             for (let add of changeSet.issueAdds) {
                 let issue:IssueData = IssueData.createFromChangeSet(boardData, add);
                 this._allIssues.add(issue.key, issue);
-                issue.filterIssue(this._filters);
+                issue.filterIssue(this._boardData.filters);
             }
         }
 
@@ -171,7 +167,7 @@ export class IssueTable {
 
                 let projectRankChanges:RankChange[] = changeSet.rankChanges[projectCode];
                 if (projectRankChanges && projectRankChanges.length > 0) {
-                    let project: BoardProject = this._projects.boardProjects.forKey(projectCode);
+                    let project: BoardProject = this._boardData.boardProjects.forKey(projectCode);
                     project.updateIssueRanks(changeSet.rankedIssues, changeSet.rankChanges[projectCode]);
                 }
             }
@@ -197,7 +193,7 @@ export class IssueTable {
 
     private storeSwimlaneCollapsedStatus(initial:boolean) : IMap<boolean> {
         let swimlaneVisibilities:IMap<boolean>;
-        if (!initial && this._swimlane && this._swimlaneTable) {
+        if (!initial && this._boardData.swimlane && this._swimlaneTable) {
             //Store the visibilities from the users collapsing swimlanes
             swimlaneVisibilities = {};
             for (let swimlane of this._swimlaneTable) {
@@ -217,30 +213,45 @@ export class IssueTable {
     }
 
     private createTable(filterIssues:boolean) {
-        if (this._swimlane) {
-            this._swimlaneTable = this.createSwimlaneTable(filterIssues);
+        let numStates = this._boardData.boardStateNames.length;
+
+        if (!this._totalIssuesByState) {
+            this._totalIssuesByState = new Array<number>(numStates);
+        }
+        if (!this._visibleIssuesByState) {
+            this._visibleIssuesByState = new Array<number>(numStates);
+        }
+        this._rankedIssues = [];
+
+        let issueCounters:StateIssueCounter[] = new Array<StateIssueCounter>(numStates);
+        //Initialise the states
+        for (let stateIndex:number = 0 ; stateIndex < numStates ; stateIndex++) {
+            issueCounters[stateIndex] = new StateIssueCounter();
+        }
+
+        if (this._boardData.swimlane) {
+            this._swimlaneTable = this.createSwimlaneTable(filterIssues, issueCounters);
             this._issueTable = null;
         } else {
-            this._issueTable = this.createIssueTable(filterIssues);
+            this._issueTable = this.createIssueTable(filterIssues, issueCounters);
             this._swimlaneTable = null;
+        }
+
+        for (let stateIndex:number = 0 ; stateIndex < numStates ; stateIndex++) {
+            this._totalIssuesByState[stateIndex] = issueCounters[stateIndex].totalCount;
+            if (filterIssues) {
+                this._visibleIssuesByState[stateIndex] = issueCounters[stateIndex].visibleCount;
+            }
         }
     }
 
 
-    private createIssueTable(filterIssues:boolean) : IssueData[][] {
-        let numStates = this._boardData.boardStateNames.length;
-
-        this._totalIssuesByState = new Array<number>(numStates);
-        this._visibleIssuesByState = new Array<number>(numStates);
-        this._rankedIssues = [];
-
-        let issueCounters = new Array<StateIssueCounter>(numStates);
-        let issueTable:IssueData[][] = new Array<IssueData[]>(numStates);
+    private createIssueTable(filterIssues:boolean, issueCounters:StateIssueCounter[]) : IssueData[][] {
+        let issueTable:IssueData[][] = new Array<IssueData[]>(issueCounters.length);
 
         //Initialise the states
-        for (let stateIndex:number = 0 ; stateIndex < numStates ; stateIndex++) {
+        for (let stateIndex:number = 0 ; stateIndex < issueCounters.length ; stateIndex++) {
             issueTable[stateIndex] = [];
-            issueCounters[stateIndex] = new StateIssueCounter();
         }
 
         for (let boardProject of this._boardData.boardProjects.array) {
@@ -254,7 +265,7 @@ export class IssueTable {
                 let issueCounter:StateIssueCounter = issueCounters[boardStateIndex];
                 issueCounter.incrementTotal();
                 if (filterIssues) {
-                    issue.filterIssue(this._filters);
+                    issue.filterIssue(this._boardData.filters);
                     if (issue.filtered) {
                         issueCounter.incrementFiltered();
                     }
@@ -264,30 +275,12 @@ export class IssueTable {
             }
         }
 
-        for (let stateIndex:number = 0 ; stateIndex < numStates ; stateIndex++) {
-            this._totalIssuesByState[stateIndex] = issueCounters[stateIndex].totalCount;
-            this._visibleIssuesByState[stateIndex] = issueCounters[stateIndex].visibleCount;
-        }
-
         return issueTable;
     }
 
-    private createSwimlaneTable(filterIssues:boolean) : SwimlaneData[] {
-        let numStates = this._boardData.boardStateNames.length;
-
-        this._totalIssuesByState = new Array<number>(numStates);
-        this._visibleIssuesByState = new Array<number>(numStates);
-        this._rankedIssues = [];
-
+    private createSwimlaneTable(filterIssues:boolean, issueCounters:StateIssueCounter[]) : SwimlaneData[] {
         let indexer:SwimlaneIndexer = this.createSwimlaneIndexer();
-        let issueCounters = new Array<StateIssueCounter>(numStates);
         let swimlaneBuilderTable:SwimlaneDataBuilder[] = indexer.swimlaneBuilderTable;
-
-        //Initialise the states
-        for (let stateIndex:number = 0 ; stateIndex < numStates ; stateIndex++) {
-            //The swimlane indexer will take care of initialising its own issue tables
-            issueCounters[stateIndex] = new StateIssueCounter();
-        }
 
         for (let boardProject of this._boardData.boardProjects.array) {
             for (let issueKey of boardProject.rankedIssueKeys) {
@@ -304,7 +297,7 @@ export class IssueTable {
                 let issueCounter:StateIssueCounter = issueCounters[boardStateIndex];
                 issueCounter.incrementTotal();
                 if (filterIssues) {
-                    issue.filterIssue(this._filters);
+                    issue.filterIssue(this._boardData.filters);
                     if (issue.filtered) {
                         issueCounter.incrementFiltered();
                     }
@@ -312,11 +305,6 @@ export class IssueTable {
 
                 this._rankedIssues.push(issue);
             }
-        }
-
-        for (let stateIndex:number = 0 ; stateIndex < numStates ; stateIndex++) {
-            this._totalIssuesByState[stateIndex] = issueCounters[stateIndex].totalCount;
-            this._visibleIssuesByState[stateIndex] = issueCounters[stateIndex].visibleCount;
         }
 
         //Create the tables and Apply the filters to the swimlanes
@@ -331,13 +319,13 @@ export class IssueTable {
     }
 
     private createSwimlaneIndexer():SwimlaneIndexer {
-        return new SwimlaneIndexerFactory().createSwimlaneIndexer(this._swimlane, this._filters, this._boardData);
+        return new SwimlaneIndexerFactory().createSwimlaneIndexer(this._boardData.swimlane, this._boardData.filters, this._boardData);
     }
 
     createQueryStringParticle():string{
         let qs:string = "";
-        if (this._swimlane) {
-            qs = "&swimlane=" + this._swimlane;
+        if (this._boardData.swimlane) {
+            qs = "&swimlane=" + this._boardData.swimlane;
 
             let hiddenEntries:SwimlaneData[] = [];
             let visibleEntries:SwimlaneData[] = [];

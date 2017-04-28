@@ -10,6 +10,8 @@ export class SwimlaneData {
     public filtered:boolean;
     private _index:number;
     private _empty:boolean;
+    private _totalIssueCount:number;
+    private _visibleIssueCount:number;
 
     constructor(issueTable:IssueData[][], name:string, index:number, empty:boolean) {
         this._name = name;
