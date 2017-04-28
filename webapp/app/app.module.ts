@@ -12,7 +12,7 @@ import {ConfigComponent} from "./components/config/config";
 import {BoardsComponent} from "./components/boards/boards";
 import {BoardComponent} from "./components/board/board";
 import {ControlPanelComponent} from "./components/board/controlPanel/controlPanel";
-import {SwimlaneEntryComponent} from "./components/board/swimlaneEntry/swimlaneEntry";
+import {SwimlaneEntryComponent} from "./components/board/view/kanban/swimlaneEntry/swimlaneEntry";
 import {RankViewComponent} from "./components/board/view/rank/rankview";
 import {PanelMenuComponent} from "./components/board/panelMenu/panelMenu";
 import {KanbanViewComponent} from "./components/board/view/kanban/kanbanview";
