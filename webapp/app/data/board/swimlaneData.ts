@@ -3,22 +3,21 @@ import {BoardData} from "./boardData";
 import {IMap} from "../../common/map";
 
 export class SwimlaneData {
-    private _name:string;
+    private readonly _name:string;
     //TODO make this immutable at some stage
-    public _issueTable:IssueData[][];
+    public readonly _issueTable:IssueData[][];
     private _collapsed:boolean = false;
     public filtered:boolean;
-    private _index:number;
-    private _empty:boolean;
-    private _totalIssueCount:number;
+    private readonly _index:number;
+    private readonly _empty:boolean;
     private _visibleIssueCount:number;
 
-    constructor(issueTable:IssueData[][], name:string, index:number, empty:boolean) {
-        this._name = name;
-        this._index = index;
-        this._issueTable = issueTable;
-        this._empty = empty;
-        console.log("Swimlane " + name + " is empty " + empty);
+    constructor(params:SwimlaneDataConstructorParams) {
+        this._name = params.name;
+        this._index = params.index;
+        this._issueTable = params.issueTable;
+        this._empty = params.empty;
+        this._visibleIssueCount = params.visibleIssueCount;
     }
 
     toggleCollapsedStatus() : void {
@@ -46,7 +45,7 @@ export class SwimlaneData {
     }
 
     get empty(): boolean {
-        return this._empty;
+        return this._empty || this._visibleIssueCount == 0;
     }
 
     restoreCollapsedStatus(savedVisibilities:IMap<boolean>) {
@@ -60,7 +59,8 @@ export class SwimlaneDataBuilder {
     private _name:string;
     private _issueTable:IssueData[][];
     private _index:number;
-    private _empty:boolean = true;
+    private _totalIssueCount:number = 0;
+    private _visibleIssueCount:number = 0;
 
     constructor(boardData:BoardData, name:string, index:number) {
         this._name = name;
@@ -82,11 +82,19 @@ export class SwimlaneDataBuilder {
 
     addIssue(index:number, issueData:IssueData) {
         this._issueTable[index].push(issueData);
-        this._empty = false;
+        this._totalIssueCount++;
+        if (!issueData.filtered) {
+            this._visibleIssueCount++;
+        }
     }
 
     build() : SwimlaneData {
-        return new SwimlaneData(this._issueTable, this._name, this._index, this._empty);
+        return new SwimlaneData(new SwimlaneDataConstructorParams(this._name, this._issueTable, this._index, this._totalIssueCount == 0, this._visibleIssueCount));
     }
+}
 
+//Use this 'hidden' intermediate class to ensure we can only create SwimlaneData from the builder
+class SwimlaneDataConstructorParams {
+    constructor(public name:string, public issueTable:IssueData[][], public index:number, public empty:boolean, public visibleIssueCount:number) {
+    }
 }
