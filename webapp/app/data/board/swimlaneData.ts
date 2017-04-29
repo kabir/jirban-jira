@@ -1,6 +1,7 @@
 import {IssueData} from "./issueData";
 import {BoardData} from "./boardData";
 import {IMap} from "../../common/map";
+import {Observable, Subject, Subscription} from "rxjs";
 
 export class SwimlaneData {
     private readonly _name:string;
@@ -53,6 +54,16 @@ export class SwimlaneData {
         //and so do not appear in the map
         this._collapsed = (savedVisibilities[this._name] == true);
     }
+
+    initializeVisibiltySubscriptions(ngUnsubscribe:Observable<void>) {
+        for (let issuesForState of this._issueTable) {
+            for (let issue of issuesForState) {
+                issue.filteredObservable
+                    .takeUntil(ngUnsubscribe)
+                    .subscribe(filtered => filtered ? this._visibleIssueCount-- : this._visibleIssueCount++);
+            }
+        }
+    }
 }
 
 export class SwimlaneDataBuilder {
@@ -61,6 +72,7 @@ export class SwimlaneDataBuilder {
     private _index:number;
     private _totalIssueCount:number = 0;
     private _visibleIssueCount:number = 0;
+    private _subscriptions:Subscription[] = [];
 
     constructor(boardData:BoardData, name:string, index:number) {
         this._name = name;

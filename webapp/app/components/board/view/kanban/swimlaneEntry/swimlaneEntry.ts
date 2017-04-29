@@ -1,9 +1,10 @@
-import {Component, EventEmitter} from "@angular/core";
+import {Component, EventEmitter, OnDestroy, OnInit} from "@angular/core";
 import {BoardData} from "../../../../../data/board/boardData";
 import {SwimlaneData} from "../../../../../data/board/swimlaneData";
 import {State, BoardHeaderEntry} from "../../../../../data/board/header";
 import {IssueContextMenuData} from "../../../../../data/board/issueContextMenuData";
 import {ParallelTaskMenuData} from "../../../../../data/board/parallelTaskMenuData";
+import {Subject} from "rxjs";
 
 
 /**
@@ -17,7 +18,9 @@ import {ParallelTaskMenuData} from "../../../../../data/board/parallelTaskMenuDa
     templateUrl: './swimlaneEntry.html',
     styleUrls: ['..//kanbanview.css', './swimlaneEntry.css']
 })
-export class SwimlaneEntryComponent {
+export class SwimlaneEntryComponent implements OnInit, OnDestroy {
+    private _ngUnsubscribe: Subject<void> = new Subject<void>();
+
     public swimlane : SwimlaneData;
     public boardData : BoardData;
     public swimlaneIndex : number;
@@ -28,6 +31,15 @@ export class SwimlaneEntryComponent {
     private toggleBacklogVisibility:EventEmitter<any> = new EventEmitter();
 
     constructor() {
+    }
+
+    ngOnInit(): void {
+        this.swimlane.initializeVisibiltySubscriptions(this._ngUnsubscribe);
+    }
+
+    ngOnDestroy(): void {
+        this._ngUnsubscribe.next();
+        this._ngUnsubscribe.complete();
     }
 
     get displayEntry():boolean {
